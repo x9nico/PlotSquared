@@ -1214,6 +1214,21 @@ public class Plot {
     }
 
     /**
+     * Get the block type from given coordinates
+     *
+     * @param x X coordinate relative to the lower corner
+     * @param y Y coordinate relative to the lower corner
+     * @param z Z coordinate relative to the lower corner
+     * @return
+     */
+    public PlotBlock getBlock(final int x, final int y, final int z) {
+        final Location bottom = this.getBottomAbs();
+        final Location location = new Location(bottom.getWorld(), bottom.getX() + x,
+            bottom.getY() + y, bottom.getZ() + z);
+        return WorldUtil.IMP.getBlock(location);
+    }
+
+    /**
      * Set the home location
      *
      * @param location
