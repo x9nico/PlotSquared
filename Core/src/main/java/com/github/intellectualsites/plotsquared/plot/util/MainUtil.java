@@ -12,6 +12,7 @@ import com.github.intellectualsites.plotsquared.plot.object.stream.AbstractDeleg
 import com.github.intellectualsites.plotsquared.plot.util.expiry.ExpireManager;
 import com.google.common.base.Optional;
 
+import javax.annotation.Nonnull;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -176,6 +177,71 @@ public class MainUtil {
                 TaskManager.runTask(whenDone);
             }
         });
+    }
+
+    /**
+     * Check whether a player can build on a specific location, or not. Throws an exception
+     * containing the reason why the player
+     *
+     * @param plotPlayer Player whose permission we are checking for
+     * @param location   Location at which the permission check takes place
+     * @param block      Block that was placed
+     * @return result of the check
+     */
+    @Nonnull public static PlayerBuildPermissionResult canBuild(
+        @Nonnull final PlotPlayer plotPlayer, @Nonnull final Location location,
+        @Nonnull final PlotBlock block) {
+        String message = null;
+        Plot plot = null;
+        block:
+        {
+            try {
+                final PlotArea area = location.getPlotArea();
+                // If the area is null, we don't care
+                if (area == null) {
+                    return new PlayerBuildPermissionResult(plotPlayer, location, block, null, null);
+                }
+                plot = area.getPlot(location);
+                if (plot != null) { // we are in a plot!
+                    if ((location.getY() > area.MAX_BUILD_HEIGHT
+                        || location.getY() < area.MIN_BUILD_HEIGHT) && !Permissions
+                        .hasPermission(plotPlayer, C.PERMISSION_ADMIN_BUILD_HEIGHTLIMIT)) {
+                        message = C.HEIGHT_LIMIT.f()
+                            .replace("{limit}", String.valueOf(area.MAX_BUILD_HEIGHT));
+                        break block;
+                    }
+                    if (!plot.hasOwner() && !Permissions
+                        .hasPermission(plotPlayer, C.PERMISSION_ADMIN_BUILD_UNOWNED)) {
+                        message = C.NO_PERMISSION_EVENT.f(C.PERMISSION_ADMIN_BUILD_UNOWNED);
+                        break block;
+                    }
+                    if (!plot.isAdded(plotPlayer.getUUID())) {
+                        final Set<PlotBlock> place = plot.getFlag(Flags.PLACE, null);
+                        if (place != null && place.contains(block)) {
+                            return new PlayerBuildPermissionResult(plotPlayer, location, block,
+                                plot, null);
+                        }
+                        if (!Permissions
+                            .hasPermission(plotPlayer, C.PERMISSION_ADMIN_BUILD_OTHER)) {
+                            message = C.NO_PERMISSION_EVENT.f(C.PERMISSION_ADMIN_BUILD_OTHER);
+                            break block;
+                        }
+                    }
+                    if (Settings.Done.RESTRICT_BUILDING && plot.getFlags().containsKey(Flags.DONE)
+                        && !Permissions.hasPermission(plotPlayer, C.PERMISSION_ADMIN_BUILD_OTHER)) {
+                        message = C.NO_PERMISSION_EVENT.f(C.PERMISSION_ADMIN_BUILD_OTHER);
+                        break block;
+                    }
+                } else /* we are on a road! */ if (!Permissions
+                    .hasPermission(plotPlayer, C.PERMISSION_ADMIN_BUILD_ROAD)) {
+                    message = C.NO_PERMISSION_EVENT.f(C.PERMISSION_ADMIN_BUILD_ROAD);
+                }
+            } catch (final Throwable throwable) {
+                message = C.METHOD_WENT_WRONG.f();
+                throwable.printStackTrace();
+            }
+        }
+        return new PlayerBuildPermissionResult(plotPlayer, location, block, plot, message);
     }
 
     /**

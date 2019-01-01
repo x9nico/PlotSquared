@@ -2750,57 +2750,24 @@ import java.util.regex.Pattern;
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void blockCreate(BlockPlaceEvent event) {
-        Location location = BukkitUtil.getLocation(event.getBlock().getLocation());
-        PlotArea area = location.getPlotArea();
-        if (area == null) {
+        final Location location = BukkitUtil.getLocation(event.getBlock().getLocation());
+        Player player = event.getPlayer();
+        final PlotPlayer pp = BukkitUtil.getPlayer(player);
+        final PlotBlock block = PlotBlock.get(event.getBlock().getType());
+        final PlayerBuildPermissionResult result = MainUtil.canBuild(pp, location, block);
+
+        if (!result.isAllowed()) {
+            player.sendMessage(result.getErrorMessage());
+            event.setCancelled(true);
+            event.setBuild(false);
             return;
         }
-        Player player = event.getPlayer();
-        PlotPlayer pp = BukkitUtil.getPlayer(player);
-        Plot plot = area.getPlot(location);
-        if (plot != null) {
-            if ((location.getY() > area.MAX_BUILD_HEIGHT || location.getY() < area.MIN_BUILD_HEIGHT)
-                && !Permissions.hasPermission(pp, C.PERMISSION_ADMIN_BUILD_HEIGHTLIMIT)) {
-                event.setCancelled(true);
-                MainUtil.sendMessage(pp,
-                    C.HEIGHT_LIMIT.s().replace("{limit}", String.valueOf(area.MAX_BUILD_HEIGHT)));
+
+        if (result.getPlot() != null && result.getPlot().getFlag(Flags.DISABLE_PHYSICS, false)) {
+            final Block bukkitBlock = event.getBlockPlaced();
+            if (bukkitBlock.getType().hasGravity()) {
+                sendBlockChange(bukkitBlock.getLocation(), bukkitBlock.getBlockData());
             }
-            if (!plot.hasOwner()) {
-                if (!Permissions.hasPermission(pp, C.PERMISSION_ADMIN_BUILD_UNOWNED)) {
-                    MainUtil
-                        .sendMessage(pp, C.NO_PERMISSION_EVENT, C.PERMISSION_ADMIN_BUILD_UNOWNED);
-                    event.setCancelled(true);
-                    return;
-                }
-            } else if (!plot.isAdded(pp.getUUID())) {
-                Set<PlotBlock> place = plot.getFlag(Flags.PLACE, null);
-                if (place != null) {
-                    Block block = event.getBlock();
-                    if (place.contains(PlotBlock.get(block.getType().name()))) {
-                        return;
-                    }
-                }
-                if (!Permissions.hasPermission(pp, C.PERMISSION_ADMIN_BUILD_OTHER)) {
-                    MainUtil.sendMessage(pp, C.NO_PERMISSION_EVENT, C.PERMISSION_ADMIN_BUILD_OTHER);
-                    event.setCancelled(true);
-                    return;
-                }
-            } else if (Settings.Done.RESTRICT_BUILDING && plot.getFlags().containsKey(Flags.DONE)) {
-                if (!Permissions.hasPermission(pp, C.PERMISSION_ADMIN_BUILD_OTHER)) {
-                    MainUtil.sendMessage(pp, C.NO_PERMISSION_EVENT, C.PERMISSION_ADMIN_BUILD_OTHER);
-                    event.setCancelled(true);
-                    return;
-                }
-            }
-            if (plot.getFlag(Flags.DISABLE_PHYSICS, false)) {
-                Block block = event.getBlockPlaced();
-                if (block.getType().hasGravity()) {
-                    sendBlockChange(block.getLocation(), block.getBlockData());
-                }
-            }
-        } else if (!Permissions.hasPermission(pp, C.PERMISSION_ADMIN_BUILD_ROAD)) {
-            MainUtil.sendMessage(pp, C.NO_PERMISSION_EVENT, C.PERMISSION_ADMIN_BUILD_ROAD);
-            event.setCancelled(true);
         }
     }
 }

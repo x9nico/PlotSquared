@@ -565,6 +565,8 @@ public enum C {
      * purge
      */
 
+    METHOD_WENT_WRONG("$2Something went wrong. Contact an administrator.", "Errors"),
+
     PURGE_SUCCESS("$4Successfully purged %s plots", "Purge"), /*
      * trim
      */
