@@ -1,6 +1,9 @@
 package com.github.intellectualsites.plotsquared.plot.command_test.subcommand;
 
-import com.github.intellectualsites.plotsquared.plot.command_test.PlotSquaredBindings;
+import com.github.intellectualsites.plotsquared.plot.command_test.binding.Clazz;
+import com.github.intellectualsites.plotsquared.plot.command_test.binding.Consume;
+import com.github.intellectualsites.plotsquared.plot.command_test.binding.Owned;
+import com.github.intellectualsites.plotsquared.plot.command_test.binding.PlotSquaredBindings;
 import com.github.intellectualsites.plotsquared.plot.config.Captions;
 import com.github.intellectualsites.plotsquared.plot.flag.Flags;
 import com.github.intellectualsites.plotsquared.plot.object.Plot;
@@ -20,8 +23,8 @@ public class InfoCommand {
     @Command(aliases = {"info", "i"}, desc = "Display plot info", flags = "f",
         usage = "[<id>] [<component>]", help = "-f forces the info to display even if the info is hidden")
     @CommandPermissions("plots.info")
-    public void info(PlotPlayer player, @PlotSquaredBindings.Consume @PlotSquaredBindings.Owned
-        @Optional("me") Plot plot, @PlotSquaredBindings.Clazz(InfoComponent.class) @Optional("none") InfoComponent component,
+    public void info(PlotPlayer player, @Consume @Owned
+        @Optional("me") Plot plot, @Clazz(InfoComponent.class) @Optional("none") InfoComponent component,
         @Switch('f') boolean force) {
 
         // hide-info flag

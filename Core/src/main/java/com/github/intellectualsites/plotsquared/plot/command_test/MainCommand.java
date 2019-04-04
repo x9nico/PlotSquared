@@ -40,7 +40,7 @@ public class MainCommand {
         builder.setAuthorizer(new ActorAuthorizer());
         builder.setDefaultCompleter(new UserCommandCompleter(platformManager));
         builder.addBinding(new WorldEditBinding(worldEdit));
-        builder.addBinding(new PlotSquaredBindings());
+        builder.addBinding(new PlotSquaredBindings(ps));
 
         dispatcher = new CommandGraph()
                 .builder(builder)
