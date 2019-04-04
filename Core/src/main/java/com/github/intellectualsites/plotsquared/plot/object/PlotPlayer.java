@@ -1,5 +1,6 @@
 package com.github.intellectualsites.plotsquared.plot.object;
 
+import com.github.intellectualsites.plotsquared.commands.Command;
 import com.github.intellectualsites.plotsquared.commands.CommandCaller;
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
 import com.github.intellectualsites.plotsquared.plot.commands.RequiredType;
@@ -12,6 +13,7 @@ import com.github.intellectualsites.plotsquared.plot.object.worlds.SinglePlotAre
 import com.github.intellectualsites.plotsquared.plot.object.worlds.SinglePlotAreaManager;
 import com.github.intellectualsites.plotsquared.plot.util.*;
 import com.github.intellectualsites.plotsquared.plot.util.expiry.ExpireManager;
+import com.sk89q.minecraft.util.commands.CommandException;
 import lombok.NonNull;
 
 import javax.annotation.Nonnull;
@@ -72,6 +74,15 @@ public abstract class PlotPlayer implements CommandCaller, OfflinePlotPlayer {
      */
     public static PlotPlayer get(String name) {
         return UUIDHandler.getPlayer(name);
+    }
+
+    public void confirm() throws CommandException {
+        if (PlotSquared.get().isMainThread(Thread.currentThread())) {
+            throw new IllegalStateException("Cannot confirm on main thread");
+        }
+        synchronized (this) {
+            // TODO wait for confirmation
+        }
     }
 
     /**

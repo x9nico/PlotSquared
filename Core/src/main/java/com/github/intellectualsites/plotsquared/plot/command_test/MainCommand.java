@@ -2,7 +2,10 @@ package com.github.intellectualsites.plotsquared.plot.command_test;
 
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
 import com.github.intellectualsites.plotsquared.plot.command_test.binding.PlotSquaredBindings;
+import com.github.intellectualsites.plotsquared.plot.object.PlotPlayer;
+import com.github.intellectualsites.plotsquared.plot.util.TaskManager;
 import com.google.common.base.Joiner;
+import com.sk89q.minecraft.util.commands.Command;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.minecraft.util.commands.CommandLocals;
 import com.sk89q.worldedit.WorldEdit;
@@ -73,9 +76,12 @@ public class MainCommand {
     @Subscribe
     public void handleCommand(CommandEvent event) {
         Actor actor = event.getActor();
+        PlotPlayer plr = PlotPlayer.wrap(actor.getName());
+        // TODO check player confirmation
 
         CommandLocals locals = new CommandLocals();
         locals.put(Actor.class, actor);
+        locals.put(PlotPlayer.class, plr);
         locals.put("arguments", event.getArguments());
 
         String[] split = commandDetection(event.getArguments().split(" "));
@@ -84,25 +90,42 @@ public class MainCommand {
         if (!dispatcher.contains(split[0])) {
             return;
         }
+        TaskManager.IMP.taskAsync(new Runnable() {
+            @Override public void run() {
+                synchronized (plr) {
+                    try {
+                        // This is a bit of a hack, since the call method can only throw CommandExceptions
+                        // everything needs to be wrapped at least once. Which means to handle all WorldEdit
+                        // exceptions without writing a hook into every dispatcher, we need to unwrap these
+                        // exceptions and rethrow their converted form, if their is one.
+                        try {
 
+                            // TODO
+                            // Relocation
+                            // Confirmation
+                            // Cost
 
-        try {
-            // This is a bit of a hack, since the call method can only throw CommandExceptions
-            // everything needs to be wrapped at least once. Which means to handle all WorldEdit
-            // exceptions without writing a hook into every dispatcher, we need to unwrap these
-            // exceptions and rethrow their converted form, if their is one.
-            try {
-                Object result = dispatcher.call(Joiner.on(" ").join(split), locals, new String[0]);
-                System.out.println("Result " + result);
-            } catch (CommandException e) {
-                actor.print(e.getMessage());
-            } catch (Throwable t) {
-                // TODO p2 error handling
+                            Command command = null; // TODO get command
+                            // Check command cost
+
+                            Object result = dispatcher.call(Joiner.on(" ").join(split), locals, new String[0]);
+
+                            if (result == Boolean.TRUE) {
+                                // If cost && true, then charge
+                            }
+                            System.out.println("Result " + result);
+                        } catch (CommandException e) {
+                            actor.print(e.getMessage());
+                        } catch (Throwable t) {
+                            // TODO p2 error handling
+                        }
+                    } finally {
+                        // cleanup
+                        event.setCancelled(true);
+                    }
+                }
             }
-        } finally {
-            // cleanup
-            event.setCancelled(true);
-        }
+        });
     }
 
     @Subscribe

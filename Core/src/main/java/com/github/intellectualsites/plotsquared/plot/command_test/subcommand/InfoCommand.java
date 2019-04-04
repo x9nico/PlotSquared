@@ -23,7 +23,7 @@ public class InfoCommand {
     @Command(aliases = {"info", "i"}, desc = "Display plot info", flags = "f",
         usage = "[<id>] [<component>]", help = "-f forces the info to display even if the info is hidden")
     @CommandPermissions("plots.info")
-    public void info(PlotPlayer player, @Consume @Owned
+    public boolean info(PlotPlayer player, @Consume @Owned
         @Optional("me") Plot plot, @Clazz(InfoComponent.class) @Optional("none") InfoComponent component,
         @Switch('f') boolean force) {
 
@@ -32,11 +32,11 @@ public class InfoCommand {
             if (force) {
                 if (!player.hasPermission(Captions.PERMISSION_AREA_INFO_FORCE.s())) {
                     Captions.NO_PERMISSION.send(player, Captions.PERMISSION_AREA_INFO_FORCE);
-                    return;
+                    return false;
                 }
             } else {
                 Captions.PLOT_INFO_HIDDEN.send(player);
-                return;
+                return false;
             }
         }
 
@@ -57,6 +57,7 @@ public class InfoCommand {
                         .s(), false);
             }
         });
+        return true;
     }
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE) @Getter public enum InfoComponent {

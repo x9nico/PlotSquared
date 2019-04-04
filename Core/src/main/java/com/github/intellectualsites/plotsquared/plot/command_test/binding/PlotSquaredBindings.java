@@ -72,6 +72,15 @@ public final class PlotSquaredBindings extends BindingHelper {
      // Non boolean flags e.g. -p Citymonstret
      @Switch('p') PlotPlayer permaBan
 
+     Command confirmation
+
+     player.confirm()
+        Must be run on the command thread (DO NOT RUN ON MAIN THREAD)
+        If the confirmation fails, an exception will be thrown and the command cancelled
+
+    Command cost
+        Return true if the command was a success, false (or some other value otherwise)
+
      */
 
     public PlotSquaredBindings(PlotSquared ps) {
@@ -122,8 +131,7 @@ public final class PlotSquaredBindings extends BindingHelper {
 
     @BindingMatch(type = PlotPlayer.class, behavior = BindingBehavior.PROVIDES)
     public PlotPlayer getCurrentPlayer(final ArgumentStack context) {
-        final Actor sender = context.getContext().getLocals().get(Actor.class);
-        return PlotPlayer.wrap(sender.getName());
+        return context.getContext().getLocals().get(PlotPlayer.class);
     }
 
     @BindingMatch(type = Location.class, behavior = BindingBehavior.PROVIDES)
@@ -144,7 +152,9 @@ public final class PlotSquaredBindings extends BindingHelper {
 
     @BindingMatch(type = Plot.class, classifier = Consume.class, behavior = BindingBehavior.PROVIDES, consumedCount = 1, provideModifiers = true)
     public Plot getCurrentPlot(ArgumentStack context, Annotation[] annotations) throws ParameterException {
-        Plot plot = getCurrentPlayer(context).getCurrentPlot();
+        Plot plot = context.getContext().getLocals().get(Plot.class);
+        if (plot != null) return plot;
+        plot = getCurrentPlayer(context).getCurrentPlot();
         if (plot == null) throw new ParameterException(Captions.NOT_IN_PLOT.s());
         validate(plot, context, annotations);
         return plot;
@@ -176,6 +186,10 @@ public final class PlotSquaredBindings extends BindingHelper {
         if (getOf(annotations, Owner.class) != null) {
             uuid = uuid != null ? uuid : getCurrentUUID(context);
             if (!plot.isOwner(uuid)) throw new ParameterException(Captions.NO_PLOT_PERMS.s());
+        }
+        if (getOf(annotations, NotOwner.class) != null) {
+            uuid = uuid != null ? uuid : getCurrentUUID(context);
+            if (plot.isOwner(uuid)) throw new ParameterException(Captions.RATING_NOT_YOUR_OWN.s());
         }
         if (getOf(annotations, Added.class) != null) {
             uuid = uuid != null ? uuid : getCurrentUUID(context);

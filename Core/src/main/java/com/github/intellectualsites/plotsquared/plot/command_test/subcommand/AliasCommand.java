@@ -1,4 +1,4 @@
-package com.github.intellectualsites.plotsquared.plot.command_test;
+package com.github.intellectualsites.plotsquared.plot.command_test.subcommand;
 
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
 import com.github.intellectualsites.plotsquared.plot.command_test.binding.Owner;
@@ -58,9 +58,10 @@ public class AliasCommand {
         desc = "Remove plot name"
     )
     @CommandPermissions("plots.alias.remove")
-    public void remove(PlotPlayer player, @Owner Plot plot) {
+    public boolean remove(PlotPlayer player, @Owner Plot plot) {
         plot.setAlias(null);
         MainUtil.sendMessage(player, Captions.ALIAS_REMOVED.s());
+        return true;
     }
 
 
