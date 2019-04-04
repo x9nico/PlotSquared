@@ -6,6 +6,7 @@ import com.github.intellectualsites.plotsquared.plot.config.Configuration;
 import com.github.intellectualsites.plotsquared.plot.flag.Flag;
 import com.github.intellectualsites.plotsquared.plot.flag.Flags;
 import com.github.intellectualsites.plotsquared.plot.object.BlockBucket;
+import com.github.intellectualsites.plotsquared.plot.object.Location;
 import com.github.intellectualsites.plotsquared.plot.object.Plot;
 import com.github.intellectualsites.plotsquared.plot.object.PlotArea;
 import com.github.intellectualsites.plotsquared.plot.object.PlotLoc;
@@ -59,6 +60,7 @@ public class PlotSquaredBindings extends BindingHelper {
      BlockVector3 - consumes
      Vector2 - consumes
      BlockVector2 - consumes
+     @Text String - consumes all
 
 
      */
@@ -73,10 +75,17 @@ public class PlotSquaredBindings extends BindingHelper {
     }
 
     @BindingMatch(type = PlotPlayer.class,
-            behavior = BindingBehavior.PROVIDES)
+        behavior = BindingBehavior.PROVIDES)
     public PlotPlayer getCurrentPlayer(ArgumentStack context) {
         Actor sender = context.getContext().getLocals().get(Actor.class);
         return PlotPlayer.wrap(sender.getName());
+    }
+
+    @BindingMatch(type = Location.class,
+        behavior = BindingBehavior.PROVIDES)
+    public Location getCurrentLocation(ArgumentStack context) {
+        PlotPlayer plr = getCurrentPlayer(context);
+        return plr.getLocation();
     }
 
     @BindingMatch(
@@ -258,7 +267,6 @@ public class PlotSquaredBindings extends BindingHelper {
         }
         return Vector3.at(radiusX, radiusY, radiusZ);
     }
-
 
     /**
      * Gets a type from a {@link ArgumentStack}.
