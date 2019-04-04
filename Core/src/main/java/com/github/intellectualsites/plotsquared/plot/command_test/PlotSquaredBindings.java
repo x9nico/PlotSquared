@@ -1,6 +1,7 @@
 package com.github.intellectualsites.plotsquared.plot.command_test;
 
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
+import com.github.intellectualsites.plotsquared.plot.config.Captions;
 import com.github.intellectualsites.plotsquared.plot.config.Configuration;
 import com.github.intellectualsites.plotsquared.plot.flag.Flag;
 import com.github.intellectualsites.plotsquared.plot.flag.Flags;
@@ -10,6 +11,7 @@ import com.github.intellectualsites.plotsquared.plot.object.PlotArea;
 import com.github.intellectualsites.plotsquared.plot.object.PlotLoc;
 import com.github.intellectualsites.plotsquared.plot.object.PlotPlayer;
 import com.github.intellectualsites.plotsquared.plot.util.MainUtil;
+import com.github.intellectualsites.plotsquared.plot.util.UUIDHandler;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.extension.platform.Actor;
@@ -86,7 +88,7 @@ public class PlotSquaredBindings extends BindingHelper {
         String input = context.next();
         PlotPlayer plr = PlotPlayer.wrap(input);
         if (plr == null) {
-            throw new ParameterException(String.format("Illegal player: %s", input));
+            throw new ParameterException(Captions.INVALID_PLAYER.f(input));
         }
         return plr;
     }
@@ -97,7 +99,9 @@ public class PlotSquaredBindings extends BindingHelper {
             behavior = BindingBehavior.PROVIDES,
             consumedCount = 1)
     public Plot getCurrentPlot(ArgumentStack context) throws ParameterException {
-        return getCurrentPlayer(context).getCurrentPlot();
+        Plot plot = getCurrentPlayer(context).getCurrentPlot();
+        if (plot == null) throw new ParameterException(Captions.NOT_IN_PLOT.s());
+        return plot;
     }
 
     @BindingMatch(
@@ -109,9 +113,11 @@ public class PlotSquaredBindings extends BindingHelper {
         String input = context.next();
         switch (input) {
             case "me":
-                return plr.getCurrentPlot();
+                return getCurrentPlot(context);
             default:
-                return MainUtil.getPlotFromString(plr, input, false);
+                Plot plot = MainUtil.getPlotFromString(plr, input, true);
+                if (plot == null) throw new ParameterException();
+                return plot;
         }
     }
 
@@ -121,7 +127,9 @@ public class PlotSquaredBindings extends BindingHelper {
             classifier = Consume.class,
             consumedCount = 1)
     public PlotArea getCurrentPlotArea(ArgumentStack context) throws ParameterException {
-        return getCurrentPlayer(context).getApplicablePlotArea();
+        PlotArea area = getCurrentPlayer(context).getApplicablePlotArea();
+        if (area == null) throw new ParameterException(Captions.NOT_IN_PLOT_WORLD.s());
+        return area;
     }
 
     @BindingMatch(
@@ -133,9 +141,11 @@ public class PlotSquaredBindings extends BindingHelper {
         String input = context.next();
         switch (input) {
             case "me":
-                return plr.getApplicablePlotArea();
+                return getCurrentPlotArea(context);
             default:
-                return PlotSquared.get().getPlotAreaByString(input);
+                PlotArea area = PlotSquared.get().getPlotAreaByString(input);
+                if (area == null) throw new ParameterException(Captions.NOT_VALID_PLOT_WORLD.f(input));
+                return area;
         }
     }
 
@@ -149,7 +159,11 @@ public class PlotSquaredBindings extends BindingHelper {
         try {
             return UUID.fromString(input);
         } catch (IllegalArgumentException e) {
-            throw new ParameterException(String.format("Illegal UUID: %s", e.getMessage()));
+            UUID uuid = UUIDHandler.getUUID(input, null);
+            if (uuid == null) {
+                throw new ParameterException(String.format("Illegal UUID: %s", e.getMessage()));
+            }
+            return uuid;
         }
     }
 
@@ -169,7 +183,7 @@ public class PlotSquaredBindings extends BindingHelper {
         return bucket;
     }
 
-    private World getWorld(String worldName) {
+    private World getWorld(String worldName) throws ParameterException {
         Platform platform = WorldEdit.getInstance().getPlatformManager().queryCapability(Capability.WORLD_EDITING);
         List<? extends World> worlds = platform.getWorlds();
         for (World current : worlds) {
@@ -177,7 +191,7 @@ public class PlotSquaredBindings extends BindingHelper {
                 return current;
             }
         }
-        return null;
+        throw new ParameterException(Captions.NOT_VALID_WORLD.f(worldName));
     }
 
     @BindingMatch(
@@ -187,7 +201,7 @@ public class PlotSquaredBindings extends BindingHelper {
     public World getCurrentWorld(ArgumentStack context) throws ParameterException {
         Actor sender = context.getContext().getLocals().get(Actor.class);
         if (sender instanceof Player) return ((Player) sender).getWorld();
-        throw new ParameterException("Not a player");
+        throw new ParameterException(Captions.IS_CONSOLE.s());
     }
 
     @BindingMatch(
@@ -197,14 +211,7 @@ public class PlotSquaredBindings extends BindingHelper {
             consumedCount = 1)
     public World getWorld(ArgumentStack context) throws ParameterException {
         String input = context.next();
-        Platform platform = WorldEdit.getInstance().getPlatformManager().queryCapability(Capability.GAME_HOOKS);
-        List<? extends World> worlds = platform.getWorlds();
-        for (World world : worlds) {
-            if (world.getName().equalsIgnoreCase(input)) {
-                return world;
-            }
-        }
-        throw new ParameterException(String.format("Invalid world: %s", input));
+        return getWorld(input);
     }
 
     @BindingMatch(
@@ -215,7 +222,7 @@ public class PlotSquaredBindings extends BindingHelper {
         final String flagName = context.next();
         final Flag flag = Flags.getFlag(flagName);
         if (flag == null) {
-            throw new ParameterException(String.format("Unknown flag: %s", flagName));
+            throw new ParameterException(Captions.INVALID_COMMAND_FLAG.f(flagName));
         }
         return flag;
     }
@@ -372,7 +379,7 @@ public class PlotSquaredBindings extends BindingHelper {
 
     public static @Nullable Double parseNumericInput(@Nullable String input) throws ParameterException {
         if (input == null) {
-            return null;
+            throw new ParameterException(Captions.NOT_VALID_NUMBER.f(input));
         }
         try {
             return Double.parseDouble(input);
