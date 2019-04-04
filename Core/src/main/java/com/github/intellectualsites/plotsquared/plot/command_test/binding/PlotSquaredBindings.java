@@ -32,8 +32,6 @@ import com.sk89q.worldedit.util.command.parametric.BindingHelper;
 import com.sk89q.worldedit.util.command.parametric.BindingMatch;
 import com.sk89q.worldedit.util.command.parametric.ParameterException;
 import com.sk89q.worldedit.world.World;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 
 import javax.annotation.Nonnull;
 import java.lang.annotation.Annotation;
