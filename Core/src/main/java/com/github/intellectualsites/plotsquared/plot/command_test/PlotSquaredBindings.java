@@ -72,8 +72,14 @@ final class PlotSquaredBindings extends BindingHelper {
      BlockVector2 - consumes
      @Text String - consumes all
 
-    // Enums (where T is the Enum class)
-    @Clazz(T.class) T arg - consumes
+     // Enums (where T is the Enum class)
+     @Clazz(T.class) T arg - consumes
+
+     // Flags e.g. -f
+     @Switch('f') boolean foobar
+
+     // Non boolean flags e.g. -p Citymonstret
+     @Switch('p') PlotPlayer permaBan
 
      */
 
