@@ -1,6 +1,7 @@
 package com.github.intellectualsites.plotsquared.plot.command_test;
 
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
+import com.github.intellectualsites.plotsquared.plot.command_test.binding.Owner;
 import com.github.intellectualsites.plotsquared.plot.config.Captions;
 import com.github.intellectualsites.plotsquared.plot.object.Plot;
 import com.github.intellectualsites.plotsquared.plot.object.PlotPlayer;
@@ -10,9 +11,6 @@ import com.github.intellectualsites.plotsquared.plot.util.MathMan;
 import com.github.intellectualsites.plotsquared.plot.util.UUIDHandler;
 import com.sk89q.minecraft.util.commands.Command;
 import com.sk89q.minecraft.util.commands.CommandPermissions;
-import com.sk89q.worldedit.util.command.parametric.Optional;
-
-import static com.github.intellectualsites.plotsquared.plot.command_test.PlotSquaredBindings.*;
 
 @Command(
     aliases = {"alias", "sa", "name", "rename", "setname", "seta", "nameplot"},

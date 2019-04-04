@@ -1,6 +1,7 @@
 package com.github.intellectualsites.plotsquared.plot.command_test;
 
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
+import com.github.intellectualsites.plotsquared.plot.command_test.binding.PlotSquaredBindings;
 import com.google.common.base.Joiner;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.minecraft.util.commands.CommandLocals;

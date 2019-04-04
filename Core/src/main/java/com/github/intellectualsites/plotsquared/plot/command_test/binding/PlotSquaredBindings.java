@@ -1,7 +1,6 @@
-package com.github.intellectualsites.plotsquared.plot.command_test;
+package com.github.intellectualsites.plotsquared.plot.command_test.binding;
 
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
-import com.github.intellectualsites.plotsquared.plot.commands.Trust;
 import com.github.intellectualsites.plotsquared.plot.config.Captions;
 import com.github.intellectualsites.plotsquared.plot.config.Configuration;
 import com.github.intellectualsites.plotsquared.plot.flag.Flag;
@@ -35,20 +34,13 @@ import com.sk89q.worldedit.util.command.parametric.ParameterException;
 import com.sk89q.worldedit.world.World;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import retrofit2.http.HEAD;
 
 import javax.annotation.Nonnull;
 import java.lang.annotation.Annotation;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.UUID;
 
-@SuppressWarnings({"unused", "WeakerAccess"}) @NoArgsConstructor(access = AccessLevel.PACKAGE)
-final class PlotSquaredBindings extends BindingHelper {
+public final class PlotSquaredBindings extends BindingHelper {
 
     /*
 
@@ -74,7 +66,7 @@ final class PlotSquaredBindings extends BindingHelper {
      @Text String - consumes all
 
      // Enums (where T is the Enum class)
-     @Clazz(T.class) T arg - consumes
+     @com.github.intellectualsites.plotsquared.plot.command_test.binding.Clazz(T.class) T arg - consumes
 
      // Flags e.g. -f
      @Switch('f') boolean foobar
@@ -84,7 +76,7 @@ final class PlotSquaredBindings extends BindingHelper {
 
      */
 
-    PlotSquaredBindings(PlotSquared ps) {
+    public PlotSquaredBindings(PlotSquared ps) {
     }
 
     @BindingMatch(
@@ -417,29 +409,6 @@ final class PlotSquaredBindings extends BindingHelper {
                 throw new ParameterException("You must either specify 1 or 2 radius values.");
         }
         return new PlotLoc((int) radiusX, (int) radiusZ);
-    }
-
-    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
-    @SuppressWarnings("WeakerAccess") public @interface Consume {
-    }
-
-    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
-    @SuppressWarnings("WeakerAccess") public @interface Owned {}
-
-    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
-    @SuppressWarnings("WeakerAccess") public @interface Owner {}
-
-    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
-    @SuppressWarnings("WeakerAccess") public @interface Added {}
-
-    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
-    @SuppressWarnings("WeakerAccess") public @interface Choice {
-        String[] value();
-    }
-
-    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
-    @SuppressWarnings("WeakerAccess") public @interface Clazz {
-        Class<? extends Enum> value();
     }
 
     public static <T> T getOf(Object[] arr, Class<T> ofType) {
