@@ -10,7 +10,11 @@ import com.github.intellectualsites.plotsquared.plot.object.PlotArea;
 import com.github.intellectualsites.plotsquared.plot.object.PlotLoc;
 import com.github.intellectualsites.plotsquared.plot.object.PlotPlayer;
 import com.github.intellectualsites.plotsquared.plot.util.MainUtil;
+import com.sk89q.worldedit.WorldEdit;
+import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.extension.platform.Actor;
+import com.sk89q.worldedit.extension.platform.Capability;
+import com.sk89q.worldedit.extension.platform.Platform;
 import com.sk89q.worldedit.internal.expression.Expression;
 import com.sk89q.worldedit.internal.expression.ExpressionException;
 import com.sk89q.worldedit.internal.expression.runtime.EvaluationException;
@@ -23,6 +27,7 @@ import com.sk89q.worldedit.util.command.parametric.BindingBehavior;
 import com.sk89q.worldedit.util.command.parametric.BindingHelper;
 import com.sk89q.worldedit.util.command.parametric.BindingMatch;
 import com.sk89q.worldedit.util.command.parametric.ParameterException;
+import com.sk89q.worldedit.world.World;
 
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
@@ -30,9 +35,32 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.List;
 import java.util.UUID;
 
 public class PlotSquaredBindings extends BindingHelper {
+
+    /*
+
+     PlotPlayer - provides
+     @Consume PlotPlayer - consumes
+     Plot - provides
+     @Consume Plot - consumes
+     PlotArea - provides
+     @Consume PlotArea - consumes
+     UUID - consumes
+     BlockBucket - consumes
+     World
+     @Consume World
+     Flag - consumes
+     Vector3 - consumes
+     BlockVector3 - consumes
+     Vector2 - consumes
+     BlockVector2 - consumes
+
+
+     */
+
 
     PlotSquaredBindings(PlotSquared ps) {
     }
@@ -44,9 +72,32 @@ public class PlotSquaredBindings extends BindingHelper {
 
     @BindingMatch(type = PlotPlayer.class,
             behavior = BindingBehavior.PROVIDES)
-    public PlotPlayer getPlayer(ArgumentStack context) {
+    public PlotPlayer getCurrentPlayer(ArgumentStack context) {
         Actor sender = context.getContext().getLocals().get(Actor.class);
         return PlotPlayer.wrap(sender.getName());
+    }
+
+    @BindingMatch(
+            type = PlotPlayer.class,
+            behavior = BindingBehavior.CONSUMES,
+            classifier = Consume.class,
+            consumedCount = 1)
+    public PlotPlayer getPlayer(ArgumentStack context) throws ParameterException {
+        String input = context.next();
+        PlotPlayer plr = PlotPlayer.wrap(input);
+        if (plr == null) {
+            throw new ParameterException(String.format("Illegal player: %s", input));
+        }
+        return plr;
+    }
+
+    @BindingMatch(
+            type = Plot.class,
+            classifier = Consume.class,
+            behavior = BindingBehavior.PROVIDES,
+            consumedCount = 1)
+    public Plot getCurrentPlot(ArgumentStack context) throws ParameterException {
+        return getCurrentPlayer(context).getCurrentPlot();
     }
 
     @BindingMatch(
@@ -54,7 +105,7 @@ public class PlotSquaredBindings extends BindingHelper {
             behavior = BindingBehavior.CONSUMES,
             consumedCount = 1)
     public Plot getPlot(ArgumentStack context) throws ParameterException {
-        PlotPlayer plr = getPlayer(context);
+        PlotPlayer plr = getCurrentPlayer(context);
         String input = context.next();
         switch (input) {
             case "me":
@@ -67,9 +118,18 @@ public class PlotSquaredBindings extends BindingHelper {
     @BindingMatch(
             type = PlotArea.class,
             behavior = BindingBehavior.CONSUMES,
+            classifier = Consume.class,
+            consumedCount = 1)
+    public PlotArea getCurrentPlotArea(ArgumentStack context) throws ParameterException {
+        return getCurrentPlayer(context).getApplicablePlotArea();
+    }
+
+    @BindingMatch(
+            type = PlotArea.class,
+            behavior = BindingBehavior.CONSUMES,
             consumedCount = 1)
     public PlotArea getPlotArea(ArgumentStack context) throws ParameterException {
-        PlotPlayer plr = getPlayer(context);
+        PlotPlayer plr = getCurrentPlayer(context);
         String input = context.next();
         switch (input) {
             case "me":
@@ -80,25 +140,11 @@ public class PlotSquaredBindings extends BindingHelper {
     }
 
     @BindingMatch(
-            type = PlotPlayer.class,
-            behavior = BindingBehavior.CONSUMES,
-            classifier = Consume.class,
-            consumedCount = 1)
-    public PlotPlayer getOtherPlayer(ArgumentStack context) throws ParameterException {
-        String input = context.next();
-        PlotPlayer plr = PlotPlayer.wrap(input);
-        if (plr == null) {
-            throw new ParameterException(String.format("Illegal player: %s", input));
-        }
-        return plr;
-    }
-
-    @BindingMatch(
             type = UUID.class,
             behavior = BindingBehavior.CONSUMES,
             consumedCount = 1)
     public UUID getUUID(ArgumentStack context) throws ParameterException {
-        PlotPlayer plr = getPlayer(context);
+        PlotPlayer plr = getCurrentPlayer(context);
         String input = context.next();
         try {
             return UUID.fromString(input);
@@ -108,9 +154,9 @@ public class PlotSquaredBindings extends BindingHelper {
     }
 
     @BindingMatch(
-        type = BlockBucket.class,
-        behavior = BindingBehavior.CONSUMES,
-        consumedCount = 1)
+            type = BlockBucket.class,
+            behavior = BindingBehavior.CONSUMES,
+            consumedCount = 1)
     public BlockBucket getBlockBucket(ArgumentStack context) throws ParameterException {
         final BlockBucket bucket;
         try {
@@ -121,6 +167,44 @@ public class PlotSquaredBindings extends BindingHelper {
             throw new ParameterException(String.format("Unknown block: %s", e.getUnknownValue()));
         }
         return bucket;
+    }
+
+    private World getWorld(String worldName) {
+        Platform platform = WorldEdit.getInstance().getPlatformManager().queryCapability(Capability.WORLD_EDITING);
+        List<? extends World> worlds = platform.getWorlds();
+        for (World current : worlds) {
+            if (current.getName().equalsIgnoreCase(worldName)) {
+                return current;
+            }
+        }
+        return null;
+    }
+
+    @BindingMatch(
+            type = World.class,
+            behavior = BindingBehavior.PROVIDES,
+            consumedCount = 1)
+    public World getCurrentWorld(ArgumentStack context) throws ParameterException {
+        Actor sender = context.getContext().getLocals().get(Actor.class);
+        if (sender instanceof Player) return ((Player) sender).getWorld();
+        throw new ParameterException("Not a player");
+    }
+
+    @BindingMatch(
+            type = World.class,
+            classifier = Consume.class,
+            behavior = BindingBehavior.CONSUMES,
+            consumedCount = 1)
+    public World getWorld(ArgumentStack context) throws ParameterException {
+        String input = context.next();
+        Platform platform = WorldEdit.getInstance().getPlatformManager().queryCapability(Capability.GAME_HOOKS);
+        List<? extends World> worlds = platform.getWorlds();
+        for (World world : worlds) {
+            if (world.getName().equalsIgnoreCase(input)) {
+                return world;
+            }
+        }
+        throw new ParameterException(String.format("Invalid world: %s", input));
     }
 
     @BindingMatch(
