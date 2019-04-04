@@ -42,6 +42,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.UUID;
 
@@ -75,6 +76,29 @@ final class PlotSquaredBindings extends BindingHelper {
      */
 
     PlotSquaredBindings(PlotSquared ps) {
+    }
+
+    @BindingMatch(
+        type = Enum.class,
+        classifier = Choice.class,
+        behavior = BindingBehavior.CONSUMES,
+        consumedCount = 1,
+        provideModifiers = true)
+    public Enum getEnum(ArgumentStack context, Annotation[] modifiers) throws ParameterException {
+        String input = context.next();
+        Enum value;
+        Class<? extends Enum> type = getOf(modifiers, Clazz.class).value();
+        try {
+            value = Enum.valueOf(type, input);
+        } catch (IllegalArgumentException ignore) {
+            try {
+                value = Enum.valueOf(type, input.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new ParameterException(
+                    Captions.SUBCOMMAND_SET_OPTIONS_HEADER.f(StringMan.join(type.getEnumConstants(), ",")));
+            }
+        }
+        return value;
     }
 
     @BindingMatch(type = String.class, behavior = BindingBehavior.CONSUMES, classifier = Choice.class, provideModifiers = true, consumedCount = 1)
@@ -383,14 +407,21 @@ final class PlotSquaredBindings extends BindingHelper {
     @SuppressWarnings("WeakerAccess") public @interface Consume {
     }
 
+    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
+    @SuppressWarnings("WeakerAccess") public @interface Owned {}
 
-    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER) public @interface Choice {
+    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
+    @SuppressWarnings("WeakerAccess") public @interface Owner {}
+
+    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
+    @SuppressWarnings("WeakerAccess") public @interface Choice {
         String[] value();
     }
 
-    @SuppressWarnings("WeakerAccess") public @interface Owned {}
-
-    @SuppressWarnings("WeakerAccess") public @interface Owner {}
+    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
+    @SuppressWarnings("WeakerAccess") public @interface Clazz {
+        Class<? extends Enum> value();
+    }
 
     public static <T> T getOf(Object[] arr, Class<T> ofType) {
         for (Object a : arr) {
