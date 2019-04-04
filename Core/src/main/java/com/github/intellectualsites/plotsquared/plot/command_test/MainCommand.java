@@ -16,10 +16,7 @@ import com.sk89q.worldedit.internal.command.ActorAuthorizer;
 import com.sk89q.worldedit.internal.command.UserCommandCompleter;
 import com.sk89q.worldedit.internal.command.WorldEditBinding;
 import com.sk89q.worldedit.util.command.Dispatcher;
-import com.sk89q.worldedit.util.command.binding.StandardBindings;
 import com.sk89q.worldedit.util.command.fluent.CommandGraph;
-import com.sk89q.worldedit.util.command.fluent.DispatcherNode;
-import com.sk89q.worldedit.util.command.parametric.ParameterException;
 import com.sk89q.worldedit.util.command.parametric.ParametricBuilder;
 import com.sk89q.worldedit.util.eventbus.Subscribe;
 
@@ -42,7 +39,7 @@ public class MainCommand {
         builder.setAuthorizer(new ActorAuthorizer());
         builder.setDefaultCompleter(new UserCommandCompleter(platformManager));
         builder.addBinding(new WorldEditBinding(worldEdit));
-        builder.addBinding(new PlotSquaredBindings(ps));
+        builder.addBinding(new PlotSquaredBindings());
 
         dispatcher = new CommandGraph()
                 .builder(builder)

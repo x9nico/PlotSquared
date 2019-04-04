@@ -9,7 +9,7 @@ public class AliasCommand {
 
     }
 
-    public void remove(PlotPlayer player, @Optional("me") Plot plot, ) {
+    public void remove(PlotPlayer player, @Optional("me") Plot plot) {
 
     }
 
