@@ -34,7 +34,6 @@ import com.sk89q.worldedit.util.command.parametric.ParameterException;
 import com.sk89q.worldedit.world.World;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import retrofit2.http.HEAD;
 
 import javax.annotation.Nonnull;
 import java.lang.annotation.Annotation;
@@ -42,12 +41,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.UUID;
 
 @SuppressWarnings({"unused", "WeakerAccess"}) @NoArgsConstructor(access = AccessLevel.PACKAGE)
-final class PlotSquaredBindings extends BindingHelper {
+public final class PlotSquaredBindings extends BindingHelper {
 
     /*
 
