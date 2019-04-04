@@ -45,7 +45,7 @@ public final class PlotSquaredBindings extends BindingHelper {
      PlotPlayer - provides
      @Consume PlotPlayer - consumes
 
-     // Plot Annotations @Owned @Owner @Added
+     // Plot Annotations @Owned @Owner @Added @Merged @Unmerged
      Plot - provides
      @Consume Plot - consumes
 
@@ -168,6 +168,10 @@ public final class PlotSquaredBindings extends BindingHelper {
     private void validate(Plot plot, ArgumentStack context, Annotation[] annotations) throws ParameterException {
         if (getOf(annotations, Owned.class) != null && !plot.hasOwner())
             throw new ParameterException(Captions.PLOT_NOT_CLAIMED.s());
+        if (getOf(annotations, Merged.class) != null && !plot.isMerged())
+            throw new ParameterException(Captions.UNLINK_IMPOSSIBLE.s());
+        if (getOf(annotations, Unmerged.class) != null && plot.isMerged())
+            throw new ParameterException(Captions.REQUIRES_UNMERGED.s());
         UUID uuid = null;
         if (getOf(annotations, Owner.class) != null) {
             uuid = uuid != null ? uuid : getCurrentUUID(context);
