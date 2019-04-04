@@ -1,5 +1,6 @@
 package com.github.intellectualsites.plotsquared.plot.command_test;
 
+import com.github.intellectualsites.plotsquared.commands.Argument;
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
 import com.github.intellectualsites.plotsquared.plot.config.Captions;
 import com.github.intellectualsites.plotsquared.plot.config.Configuration;
@@ -12,6 +13,7 @@ import com.github.intellectualsites.plotsquared.plot.object.PlotArea;
 import com.github.intellectualsites.plotsquared.plot.object.PlotLoc;
 import com.github.intellectualsites.plotsquared.plot.object.PlotPlayer;
 import com.github.intellectualsites.plotsquared.plot.util.MainUtil;
+import com.github.intellectualsites.plotsquared.plot.util.StringMan;
 import com.github.intellectualsites.plotsquared.plot.util.UUIDHandler;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.entity.Player;
@@ -71,7 +73,36 @@ public class PlotSquaredBindings extends BindingHelper {
     }
 
     @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
-    @SuppressWarnings("WeakerAccess") public @interface Consume {
+    @SuppressWarnings("WeakerAccess") public @interface Consume {}
+
+    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
+    @SuppressWarnings("WeakerAccess") public @interface Choice {
+        String[] value();
+    }
+
+    @BindingMatch(
+        type = String.class,
+        behavior = BindingBehavior.CONSUMES,
+        classifier = Choice.class,
+        provideModifiers = true,
+        consumedCount = 1)
+    public String getChoice(ArgumentStack context, Annotation[] annotations)
+        throws ParameterException {
+
+        String input = context.next();
+        for (Annotation annotation : annotations) {
+            if (annotation instanceof Choice) {
+                String[] choices = ((Choice) annotation).value();
+                for (String choice : choices) {
+                    if (input.equalsIgnoreCase(choice)) {
+                        return choice;
+                    }
+                }
+                throw new ParameterException(Captions.SUBCOMMAND_SET_OPTIONS_HEADER.f(StringMan.join(choices, ",")));
+            }
+        }
+        // Never happens
+        throw new ParameterException("idk");
     }
 
     @BindingMatch(type = PlotPlayer.class, behavior = BindingBehavior.PROVIDES)
