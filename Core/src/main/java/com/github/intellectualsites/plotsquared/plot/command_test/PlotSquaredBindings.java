@@ -6,6 +6,7 @@ import com.github.intellectualsites.plotsquared.plot.flag.Flag;
 import com.github.intellectualsites.plotsquared.plot.flag.Flags;
 import com.github.intellectualsites.plotsquared.plot.object.BlockBucket;
 import com.github.intellectualsites.plotsquared.plot.object.Plot;
+import com.github.intellectualsites.plotsquared.plot.object.PlotArea;
 import com.github.intellectualsites.plotsquared.plot.object.PlotLoc;
 import com.github.intellectualsites.plotsquared.plot.object.PlotPlayer;
 import com.github.intellectualsites.plotsquared.plot.util.MainUtil;
@@ -17,7 +18,11 @@ import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.math.Vector2;
 import com.sk89q.worldedit.math.Vector3;
-import com.sk89q.worldedit.util.command.parametric.*;
+import com.sk89q.worldedit.util.command.parametric.ArgumentStack;
+import com.sk89q.worldedit.util.command.parametric.BindingBehavior;
+import com.sk89q.worldedit.util.command.parametric.BindingHelper;
+import com.sk89q.worldedit.util.command.parametric.BindingMatch;
+import com.sk89q.worldedit.util.command.parametric.ParameterException;
 
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
@@ -25,10 +30,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Type;
 import java.util.UUID;
-
-import static com.sk89q.worldedit.util.command.parametric.BindingHelper.validate;
 
 public class PlotSquaredBindings extends BindingHelper {
 
@@ -51,7 +53,7 @@ public class PlotSquaredBindings extends BindingHelper {
             type = Plot.class,
             behavior = BindingBehavior.CONSUMES,
             consumedCount = 1)
-    public Plot getCommandContext(ArgumentStack context) throws ParameterException {
+    public Plot getPlot(ArgumentStack context) throws ParameterException {
         PlotPlayer plr = getPlayer(context);
         String input = context.next();
         switch (input) {
@@ -59,6 +61,21 @@ public class PlotSquaredBindings extends BindingHelper {
                 return plr.getCurrentPlot();
             default:
                 return MainUtil.getPlotFromString(plr, input, false);
+        }
+    }
+
+    @BindingMatch(
+            type = PlotArea.class,
+            behavior = BindingBehavior.CONSUMES,
+            consumedCount = 1)
+    public PlotArea getPlotArea(ArgumentStack context) throws ParameterException {
+        PlotPlayer plr = getPlayer(context);
+        String input = context.next();
+        switch (input) {
+            case "me":
+                return plr.getApplicablePlotArea();
+            default:
+                return PlotSquared.get().getPlotAreaByString(input);
         }
     }
 
@@ -136,13 +153,13 @@ public class PlotSquaredBindings extends BindingHelper {
         final double radiusX, radiusY, radiusZ;
         switch (radii.length) {
             case 1:
-                radiusX = radiusY = radiusZ = Math.max(1, parseNumericInput(radii[0]));
+                radiusX = radiusY = radiusZ = parseNumericInput(radii[0]);
                 break;
 
             case 3:
-                radiusX = Math.max(1, parseNumericInput(radii[0]));
-                radiusY = Math.max(1, parseNumericInput(radii[1]));
-                radiusZ = Math.max(1, parseNumericInput(radii[2]));
+                radiusX = parseNumericInput(radii[0]);
+                radiusY = parseNumericInput(radii[1]);
+                radiusZ = parseNumericInput(radii[2]);
                 break;
 
             default:
@@ -169,12 +186,12 @@ public class PlotSquaredBindings extends BindingHelper {
         final double radiusX, radiusZ;
         switch (radii.length) {
             case 1:
-                radiusX = radiusZ = Math.max(1, parseNumericInput(radii[0]));
+                radiusX = radiusZ = parseNumericInput(radii[0]);
                 break;
 
             case 2:
-                radiusX = Math.max(1, parseNumericInput(radii[0]));
-                radiusZ = Math.max(1, parseNumericInput(radii[1]));
+                radiusX = parseNumericInput(radii[0]);
+                radiusZ = parseNumericInput(radii[1]);
                 break;
 
             default:
@@ -198,13 +215,13 @@ public class PlotSquaredBindings extends BindingHelper {
         final double radiusX, radiusY, radiusZ;
         switch (radii.length) {
             case 1:
-                radiusX = radiusY = radiusZ = Math.max(1, parseNumericInput(radii[0]));
+                radiusX = radiusY = radiusZ = parseNumericInput(radii[0]);
                 break;
 
             case 3:
-                radiusX = Math.max(1, parseNumericInput(radii[0]));
-                radiusY = Math.max(1, parseNumericInput(radii[1]));
-                radiusZ = Math.max(1, parseNumericInput(radii[2]));
+                radiusX = parseNumericInput(radii[0]);
+                radiusY = parseNumericInput(radii[1]);
+                radiusZ = parseNumericInput(radii[2]);
                 break;
 
             default:
@@ -231,12 +248,12 @@ public class PlotSquaredBindings extends BindingHelper {
         final double radiusX, radiusZ;
         switch (radii.length) {
             case 1:
-                radiusX = radiusZ = Math.max(1, parseNumericInput(radii[0]));
+                radiusX = radiusZ = parseNumericInput(radii[0]);
                 break;
 
             case 2:
-                radiusX = Math.max(1, parseNumericInput(radii[0]));
-                radiusZ = Math.max(1, parseNumericInput(radii[1]));
+                radiusX = parseNumericInput(radii[0]);
+                radiusZ = parseNumericInput(radii[1]);
                 break;
 
             default:
@@ -255,12 +272,12 @@ public class PlotSquaredBindings extends BindingHelper {
         final double radiusX, radiusZ;
         switch (radii.length) {
             case 1:
-                radiusX = radiusZ = Math.max(1, parseNumericInput(radii[0]));
+                radiusX = radiusZ = parseNumericInput(radii[0]);
                 break;
 
             case 2:
-                radiusX = Math.max(1, parseNumericInput(radii[0]));
-                radiusZ = Math.max(1, parseNumericInput(radii[1]));
+                radiusX = parseNumericInput(radii[0]);
+                radiusZ = parseNumericInput(radii[1]);
                 break;
 
             default:
