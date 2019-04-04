@@ -1,6 +1,7 @@
 package com.github.intellectualsites.plotsquared.plot.command_test;
 
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
+import com.github.intellectualsites.plotsquared.plot.commands.Trust;
 import com.github.intellectualsites.plotsquared.plot.config.Captions;
 import com.github.intellectualsites.plotsquared.plot.config.Configuration;
 import com.github.intellectualsites.plotsquared.plot.flag.Flag;
@@ -54,7 +55,7 @@ final class PlotSquaredBindings extends BindingHelper {
      PlotPlayer - provides
      @Consume PlotPlayer - consumes
 
-     // Plot Annotations @Owned @Owner
+     // Plot Annotations @Owned @Owner @Added
      Plot - provides
      @Consume Plot - consumes
 
@@ -177,8 +178,15 @@ final class PlotSquaredBindings extends BindingHelper {
     private void validate(Plot plot, ArgumentStack context, Annotation[] annotations) throws ParameterException {
         if (getOf(annotations, Owned.class) != null && !plot.hasOwner())
             throw new ParameterException(Captions.PLOT_NOT_CLAIMED.s());
-        if (getOf(annotations, Owner.class) != null && !plot.isOwner(getCurrentUUID(context)))
-            throw new ParameterException(Captions.NO_PLOT_PERMS.s());
+        UUID uuid = null;
+        if (getOf(annotations, Owner.class) != null) {
+            uuid = uuid != null ? uuid : getCurrentUUID(context);
+            if (!plot.isOwner(uuid)) throw new ParameterException(Captions.NO_PLOT_PERMS.s());
+        }
+        if (getOf(annotations, Added.class) != null) {
+            uuid = uuid != null ? uuid : getCurrentUUID(context);
+            if (!plot.isAdded(uuid)) throw new ParameterException(Captions.NO_PLOT_PERMS.s());
+        }
     }
 
     @BindingMatch(type = PlotArea.class, behavior = BindingBehavior.CONSUMES, classifier = Consume.class, consumedCount = 1)
@@ -420,6 +428,9 @@ final class PlotSquaredBindings extends BindingHelper {
 
     @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
     @SuppressWarnings("WeakerAccess") public @interface Owner {}
+
+    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
+    @SuppressWarnings("WeakerAccess") public @interface Added {}
 
     @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
     @SuppressWarnings("WeakerAccess") public @interface Choice {
