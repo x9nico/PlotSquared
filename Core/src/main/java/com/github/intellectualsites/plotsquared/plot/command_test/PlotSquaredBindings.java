@@ -35,6 +35,7 @@ import com.sk89q.worldedit.util.command.parametric.ParameterException;
 import com.sk89q.worldedit.world.World;
 import retrofit2.http.HEAD;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -379,11 +380,8 @@ public class PlotSquaredBindings extends BindingHelper {
         return new PlotLoc((int) radiusX, (int) radiusZ);
     }
 
-    public static @Nullable Double parseNumericInput(@Nullable String input)
+    public static @Nullable Double parseNumericInput(@Nonnull String input)
         throws ParameterException {
-        if (input == null) {
-            throw new ParameterException(Captions.NOT_VALID_NUMBER.f(input));
-        }
         try {
             return Double.parseDouble(input);
         } catch (NumberFormatException e1) {
