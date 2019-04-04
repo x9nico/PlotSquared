@@ -72,6 +72,8 @@ final class PlotSquaredBindings extends BindingHelper {
      BlockVector2 - consumes
      @Text String - consumes all
 
+    // Enums (where T is the Enum class)
+    @Clazz(T.class) T arg - consumes
 
      */
 
@@ -450,5 +452,5 @@ final class PlotSquaredBindings extends BindingHelper {
                         input, e.getMessage()));
             }
         }
-
+    }
 }
