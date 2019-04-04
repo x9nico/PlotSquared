@@ -19,6 +19,7 @@ import com.sk89q.worldedit.util.command.Dispatcher;
 import com.sk89q.worldedit.util.command.binding.StandardBindings;
 import com.sk89q.worldedit.util.command.fluent.CommandGraph;
 import com.sk89q.worldedit.util.command.fluent.DispatcherNode;
+import com.sk89q.worldedit.util.command.parametric.ParameterException;
 import com.sk89q.worldedit.util.command.parametric.ParametricBuilder;
 import com.sk89q.worldedit.util.eventbus.Subscribe;
 
@@ -95,6 +96,8 @@ public class MainCommand {
             try {
                 Object result = dispatcher.call(Joiner.on(" ").join(split), locals, new String[0]);
                 System.out.println("Result " + result);
+            } catch (CommandException e) {
+                actor.print(e.getMessage());
             } catch (Throwable t) {
                 // TODO p2 error handling
             }
