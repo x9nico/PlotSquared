@@ -19,6 +19,10 @@ import com.sk89q.minecraft.util.commands.CommandPermissions;
 @CommandPermissions("plots.alias")
 public class AliasCommand {
 
+    @Command(
+        aliases = "set",
+        desc = "set plot name"
+    )
     @CommandPermissions("plots.alias.set")
     public boolean set(PlotPlayer player, @Owner Plot plot, String alias) {
         if (alias.isEmpty()) {

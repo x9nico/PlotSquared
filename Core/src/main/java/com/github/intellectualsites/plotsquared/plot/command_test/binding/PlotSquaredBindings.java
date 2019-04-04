@@ -78,8 +78,14 @@ public final class PlotSquaredBindings extends BindingHelper {
         Must be run on the command thread (DO NOT RUN ON MAIN THREAD)
         If the confirmation fails, an exception will be thrown and the command cancelled
 
-    Command cost
+     Command cost
         Return true if the command was a success, false (or some other value otherwise)
+
+     @Optional
+     Is an optional argument, a value e.g. @Optional("me") can be passed for a default value
+
+    commands are run async
+        To run on the main thread use TaskManager.IMP.sync(...)
 
      */
 
