@@ -31,6 +31,7 @@ import com.sk89q.worldedit.util.command.parametric.BindingHelper;
 import com.sk89q.worldedit.util.command.parametric.BindingMatch;
 import com.sk89q.worldedit.util.command.parametric.ParameterException;
 import com.sk89q.worldedit.world.World;
+import retrofit2.http.HEAD;
 
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
@@ -69,13 +70,11 @@ public class PlotSquaredBindings extends BindingHelper {
     PlotSquaredBindings(PlotSquared ps) {
     }
 
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.PARAMETER)
+    @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
     @SuppressWarnings("WeakerAccess") public @interface Consume {
     }
 
-    @BindingMatch(type = PlotPlayer.class,
-        behavior = BindingBehavior.PROVIDES)
+    @BindingMatch(type = PlotPlayer.class, behavior = BindingBehavior.PROVIDES)
     public PlotPlayer getCurrentPlayer(ArgumentStack context) {
         Actor sender = context.getContext().getLocals().get(Actor.class);
         return PlotPlayer.wrap(sender.getName());
@@ -102,21 +101,14 @@ public class PlotSquaredBindings extends BindingHelper {
         return plr;
     }
 
-    @BindingMatch(
-            type = Plot.class,
-            classifier = Consume.class,
-            behavior = BindingBehavior.PROVIDES,
-            consumedCount = 1)
+    @BindingMatch(type = Plot.class, classifier = Consume.class, behavior = BindingBehavior.PROVIDES, consumedCount = 1)
     public Plot getCurrentPlot(ArgumentStack context) throws ParameterException {
         Plot plot = getCurrentPlayer(context).getCurrentPlot();
         if (plot == null) throw new ParameterException(Captions.NOT_IN_PLOT.s());
         return plot;
     }
 
-    @BindingMatch(
-            type = Plot.class,
-            behavior = BindingBehavior.CONSUMES,
-            consumedCount = 1)
+    @BindingMatch(type = Plot.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)
     public Plot getPlot(ArgumentStack context) throws ParameterException {
         PlotPlayer plr = getCurrentPlayer(context);
         String input = context.next();
@@ -130,21 +122,14 @@ public class PlotSquaredBindings extends BindingHelper {
         }
     }
 
-    @BindingMatch(
-            type = PlotArea.class,
-            behavior = BindingBehavior.CONSUMES,
-            classifier = Consume.class,
-            consumedCount = 1)
+    @BindingMatch(type = PlotArea.class, behavior = BindingBehavior.CONSUMES, classifier = Consume.class, consumedCount = 1)
     public PlotArea getCurrentPlotArea(ArgumentStack context) throws ParameterException {
         PlotArea area = getCurrentPlayer(context).getApplicablePlotArea();
         if (area == null) throw new ParameterException(Captions.NOT_IN_PLOT_WORLD.s());
         return area;
     }
 
-    @BindingMatch(
-            type = PlotArea.class,
-            behavior = BindingBehavior.CONSUMES,
-            consumedCount = 1)
+    @BindingMatch(type = PlotArea.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)
     public PlotArea getPlotArea(ArgumentStack context) throws ParameterException {
         PlotPlayer plr = getCurrentPlayer(context);
         String input = context.next();
@@ -158,10 +143,7 @@ public class PlotSquaredBindings extends BindingHelper {
         }
     }
 
-    @BindingMatch(
-            type = UUID.class,
-            behavior = BindingBehavior.CONSUMES,
-            consumedCount = 1)
+    @BindingMatch(type = UUID.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)
     public UUID getUUID(ArgumentStack context) throws ParameterException {
         PlotPlayer plr = getCurrentPlayer(context);
         String input = context.next();
@@ -176,10 +158,7 @@ public class PlotSquaredBindings extends BindingHelper {
         }
     }
 
-    @BindingMatch(
-            type = BlockBucket.class,
-            behavior = BindingBehavior.CONSUMES,
-            consumedCount = 1)
+    @BindingMatch(type = BlockBucket.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)
     public BlockBucket getBlockBucket(ArgumentStack context) throws ParameterException {
         final BlockBucket bucket;
         try {
@@ -193,7 +172,8 @@ public class PlotSquaredBindings extends BindingHelper {
     }
 
     private World getWorld(String worldName) throws ParameterException {
-        Platform platform = WorldEdit.getInstance().getPlatformManager().queryCapability(Capability.WORLD_EDITING);
+        Platform platform =
+            WorldEdit.getInstance().getPlatformManager().queryCapability(Capability.WORLD_EDITING);
         List<? extends World> worlds = platform.getWorlds();
         for (World current : worlds) {
             if (current.getName().equalsIgnoreCase(worldName)) {
@@ -203,30 +183,21 @@ public class PlotSquaredBindings extends BindingHelper {
         throw new ParameterException(Captions.NOT_VALID_WORLD.f(worldName));
     }
 
-    @BindingMatch(
-            type = World.class,
-            behavior = BindingBehavior.PROVIDES,
-            consumedCount = 1)
+    @BindingMatch(type = World.class, behavior = BindingBehavior.PROVIDES, consumedCount = 1)
     public World getCurrentWorld(ArgumentStack context) throws ParameterException {
         Actor sender = context.getContext().getLocals().get(Actor.class);
-        if (sender instanceof Player) return ((Player) sender).getWorld();
+        if (sender instanceof Player)
+            return ((Player) sender).getWorld();
         throw new ParameterException(Captions.IS_CONSOLE.s());
     }
 
-    @BindingMatch(
-            type = World.class,
-            classifier = Consume.class,
-            behavior = BindingBehavior.CONSUMES,
-            consumedCount = 1)
+    @BindingMatch(type = World.class, classifier = Consume.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)
     public World getWorld(ArgumentStack context) throws ParameterException {
         String input = context.next();
         return getWorld(input);
     }
 
-    @BindingMatch(
-        type = Flag.class,
-        behavior = BindingBehavior.CONSUMES,
-        consumedCount = 1)
+    @BindingMatch(type = Flag.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)
     public Flag getFlag(ArgumentStack context) throws ParameterException {
         final String flagName = context.next();
         final Flag flag = Flags.getFlag(flagName);
@@ -243,11 +214,9 @@ public class PlotSquaredBindings extends BindingHelper {
      * @return the requested type
      * @throws ParameterException on error
      */
-    @BindingMatch(type = Vector3.class,
-            behavior = BindingBehavior.CONSUMES,
-            consumedCount = 1,
-            provideModifiers = true)
-    public Vector3 getVector3(ArgumentStack context, Annotation[] modifiers) throws ParameterException {
+    @BindingMatch(type = Vector3.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1, provideModifiers = true)
+    public Vector3 getVector3(ArgumentStack context, Annotation[] modifiers)
+        throws ParameterException {
         String radiusString = context.next();
         String[] radii = radiusString.split(",");
         final double radiusX, radiusY, radiusZ;
@@ -275,11 +244,9 @@ public class PlotSquaredBindings extends BindingHelper {
      * @return the requested type
      * @throws ParameterException on error
      */
-    @BindingMatch(type = Vector2.class,
-            behavior = BindingBehavior.CONSUMES,
-            consumedCount = 1,
-            provideModifiers = true)
-    public Vector2 getVector2(ArgumentStack context, Annotation[] modifiers) throws ParameterException {
+    @BindingMatch(type = Vector2.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1, provideModifiers = true)
+    public Vector2 getVector2(ArgumentStack context, Annotation[] modifiers)
+        throws ParameterException {
         String radiusString = context.next();
         String[] radii = radiusString.split(",");
         final double radiusX, radiusZ;
@@ -297,18 +264,18 @@ public class PlotSquaredBindings extends BindingHelper {
                 throw new ParameterException("You must either specify 1 or 2 radius values.");
         }
         return Vector2.at(radiusX, radiusZ);
-    }    /**
+    }
+
+    /**
      * Gets a type from a {@link ArgumentStack}.
      *
      * @param context the context
      * @return the requested type
      * @throws ParameterException on error
      */
-    @BindingMatch(type = BlockVector3.class,
-            behavior = BindingBehavior.CONSUMES,
-            consumedCount = 1,
-            provideModifiers = true)
-    public BlockVector3 getBlockVector3(ArgumentStack context, Annotation[] modifiers) throws ParameterException {
+    @BindingMatch(type = BlockVector3.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1, provideModifiers = true)
+    public BlockVector3 getBlockVector3(ArgumentStack context, Annotation[] modifiers)
+        throws ParameterException {
         String radiusString = context.next();
         String[] radii = radiusString.split(",");
         final double radiusX, radiusY, radiusZ;
@@ -337,11 +304,9 @@ public class PlotSquaredBindings extends BindingHelper {
      * @return the requested type
      * @throws ParameterException on error
      */
-    @BindingMatch(type = BlockVector2.class,
-            behavior = BindingBehavior.CONSUMES,
-            consumedCount = 1,
-            provideModifiers = true)
-    public BlockVector2 getBlockVector2(ArgumentStack context, Annotation[] modifiers) throws ParameterException {
+    @BindingMatch(type = BlockVector2.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1, provideModifiers = true)
+    public BlockVector2 getBlockVector2(ArgumentStack context, Annotation[] modifiers)
+        throws ParameterException {
         String radiusString = context.next();
         String[] radii = radiusString.split(",");
         final double radiusX, radiusZ;
@@ -361,11 +326,9 @@ public class PlotSquaredBindings extends BindingHelper {
         return BlockVector2.at(radiusX, radiusZ);
     }
 
-    @BindingMatch(type = PlotLoc.class,
-            behavior = BindingBehavior.CONSUMES,
-            consumedCount = 1,
-            provideModifiers = true)
-    public PlotLoc getPlotLoc(ArgumentStack context, Annotation[] modifiers) throws ParameterException {
+    @BindingMatch(type = PlotLoc.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1, provideModifiers = true)
+    public PlotLoc getPlotLoc(ArgumentStack context, Annotation[] modifiers)
+        throws ParameterException {
         String radiusString = context.next();
         String[] radii = radiusString.split(",");
         final double radiusX, radiusZ;
@@ -385,7 +348,8 @@ public class PlotSquaredBindings extends BindingHelper {
         return new PlotLoc((int) radiusX, (int) radiusZ);
     }
 
-    public static @Nullable Double parseNumericInput(@Nullable String input) throws ParameterException {
+    public static @Nullable Double parseNumericInput(@Nullable String input)
+        throws ParameterException {
         if (input == null) {
             throw new ParameterException(Captions.NOT_VALID_NUMBER.f(input));
         }
@@ -397,10 +361,12 @@ public class PlotSquaredBindings extends BindingHelper {
                 return expression.evaluate();
             } catch (EvaluationException e) {
                 throw new ParameterException(String.format(
-                        "Expected '%s' to be a valid number (or a valid mathematical expression)", input));
+                    "Expected '%s' to be a valid number (or a valid mathematical expression)",
+                    input));
             } catch (ExpressionException e) {
-                throw new ParameterException(String.format(
-                        "Expected '%s' to be a number or valid math expression (error: %s)", input, e.getMessage()));
+                throw new ParameterException(String
+                    .format("Expected '%s' to be a number or valid math expression (error: %s)",
+                        input, e.getMessage()));
             }
         }
     }
