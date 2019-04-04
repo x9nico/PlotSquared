@@ -51,11 +51,15 @@ public class PlotSquaredBindings extends BindingHelper {
 
      PlotPlayer - provides
      @Consume PlotPlayer - consumes
+
+     // Plot Annotations @Owned @Owner
      Plot - provides
      @Consume Plot - consumes
+
      PlotArea - provides
      @Consume PlotArea - consumes
-     UUID - consumes
+     UUID - provides
+     @Consume UUID - consumes
      BlockBucket - consumes
      World
      @Consume World
@@ -75,6 +79,10 @@ public class PlotSquaredBindings extends BindingHelper {
 
     @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
     @SuppressWarnings("WeakerAccess") public @interface Consume {}
+
+    @SuppressWarnings("WeakerAccess") public @interface Owned {}
+
+    @SuppressWarnings("WeakerAccess") public @interface Owner {}
 
     @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.PARAMETER)
     @SuppressWarnings("WeakerAccess") public @interface Choice {
@@ -133,25 +141,34 @@ public class PlotSquaredBindings extends BindingHelper {
         return plr;
     }
 
-    @BindingMatch(type = Plot.class, classifier = Consume.class, behavior = BindingBehavior.PROVIDES, consumedCount = 1)
-    public Plot getCurrentPlot(ArgumentStack context) throws ParameterException {
+    @BindingMatch(type = Plot.class, classifier = Consume.class, behavior = BindingBehavior.PROVIDES, consumedCount = 1, provideModifiers = true)
+    public Plot getCurrentPlot(ArgumentStack context, Annotation[] annotations) throws ParameterException {
         Plot plot = getCurrentPlayer(context).getCurrentPlot();
         if (plot == null) throw new ParameterException(Captions.NOT_IN_PLOT.s());
+        validate(plot, context, annotations);
         return plot;
     }
 
-    @BindingMatch(type = Plot.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)
-    public Plot getPlot(ArgumentStack context) throws ParameterException {
+    @BindingMatch(type = Plot.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1, provideModifiers = true)
+    public Plot getPlot(ArgumentStack context, Annotation[] annotations) throws ParameterException {
         PlotPlayer plr = getCurrentPlayer(context);
         String input = context.next();
         switch (input) {
             case "me":
-                return getCurrentPlot(context);
+                return getCurrentPlot(context, annotations);
             default:
                 Plot plot = MainUtil.getPlotFromString(plr, input, true);
                 if (plot == null) throw new ParameterException();
+                validate(plot, context, annotations);
                 return plot;
         }
+    }
+
+    private void validate(Plot plot, ArgumentStack context, Annotation[] annotations) throws ParameterException {
+        if (getOf(annotations, Owned.class) != null && !plot.hasOwner())
+            throw new ParameterException(Captions.PLOT_NOT_CLAIMED.s());
+        if (getOf(annotations, Owner.class) != null && !plot.isOwner(getCurrentUUID(context)))
+            throw new ParameterException(Captions.NO_PLOT_PERMS.s());
     }
 
     @BindingMatch(type = PlotArea.class, behavior = BindingBehavior.CONSUMES, classifier = Consume.class, consumedCount = 1)
@@ -175,7 +192,7 @@ public class PlotSquaredBindings extends BindingHelper {
         }
     }
 
-    @BindingMatch(type = UUID.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)
+    @BindingMatch(type = UUID.class, classifier = Consume.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)
     public UUID getUUID(ArgumentStack context) throws ParameterException {
         PlotPlayer plr = getCurrentPlayer(context);
         String input = context.next();
@@ -188,6 +205,11 @@ public class PlotSquaredBindings extends BindingHelper {
             }
             return uuid;
         }
+    }
+
+    @BindingMatch(type = UUID.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)
+    public UUID getCurrentUUID(ArgumentStack context) throws ParameterException {
+        return context.getContext().getLocals().get(Actor.class).getUniqueId();
     }
 
     @BindingMatch(type = BlockBucket.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)
@@ -398,6 +420,15 @@ public class PlotSquaredBindings extends BindingHelper {
                         input, e.getMessage()));
             }
         }
+    }
+
+    public static <T> T getOf(Object[] arr, Class<T> ofType) {
+        for (Object a : arr) {
+            if (a != null && a.getClass() == ofType) {
+                return (T) a;
+            }
+        }
+        return null;
     }
 
 }
