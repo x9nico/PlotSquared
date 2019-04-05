@@ -90,6 +90,8 @@ public class MainCommand {
         CommandLocals locals = new CommandLocals();
         locals.put(Actor.class, actor);
         locals.put(PlotPlayer.class, player);
+        locals.put(Location.class, player.getLocation());
+        locals.put(Plot.class, player.getCurrentPlot());
         locals.put("arguments", event.getArguments());
 
         String[] split = commandDetection(locals, event.getArguments().split(" "));
