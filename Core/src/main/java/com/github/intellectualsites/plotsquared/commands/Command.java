@@ -206,7 +206,7 @@ public abstract class Command {
         return "plots." + getFullId();
     }
 
-    public <T> void paginate(PlotPlayer player, List<T> c, int size, int page,
+    public static <T> void paginate(PlotPlayer player, List<T> c, int size, int page,
         RunnableVal3<Integer, T, PlotMessage> add, String baseCommand, String header) {
         // Calculate pages & index
         if (page < 0) {
