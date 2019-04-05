@@ -672,33 +672,8 @@ public class MainUtil {
         return ratings;
     }
 
-    public static Set<UUID> getUUIDsFromString(String list) {
-        String[] split = list.split(",");
-        HashSet<UUID> result = new HashSet<>();
-        for (String name : split) {
-            if (name.isEmpty()) {
-                // Invalid
-                return Collections.emptySet();
-            }
-            if ("*".equals(name)) {
-                result.add(DBFunc.EVERYONE);
-                continue;
-            }
-            if (name.length() > 16) {
-                try {
-                    result.add(UUID.fromString(name));
-                    continue;
-                } catch (IllegalArgumentException ignored) {
-                    return Collections.emptySet();
-                }
-            }
-            UUID uuid = UUIDHandler.getUUID(name, null);
-            if (uuid == null) {
-                return Collections.emptySet();
-            }
-            result.add(uuid);
-        }
-        return result;
+    public static UUIDSet getUUIDsFromString(String list) {
+        return new UUIDSet(list);
     }
 
     /**

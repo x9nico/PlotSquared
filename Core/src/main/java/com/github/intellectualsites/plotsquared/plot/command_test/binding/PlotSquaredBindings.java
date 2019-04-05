@@ -11,6 +11,7 @@ import com.github.intellectualsites.plotsquared.plot.object.Plot;
 import com.github.intellectualsites.plotsquared.plot.object.PlotArea;
 import com.github.intellectualsites.plotsquared.plot.object.PlotLoc;
 import com.github.intellectualsites.plotsquared.plot.object.PlotPlayer;
+import com.github.intellectualsites.plotsquared.plot.object.UUIDSet;
 import com.github.intellectualsites.plotsquared.plot.util.MainUtil;
 import com.github.intellectualsites.plotsquared.plot.util.StringMan;
 import com.github.intellectualsites.plotsquared.plot.util.UUIDHandler;
@@ -53,6 +54,7 @@ public final class PlotSquaredBindings extends BindingHelper {
      @Consume PlotArea - consumes
      UUID - provides
      @Consume UUID - consumes
+     UUIDSet - consumes
      BlockBucket - consumes
      World
      @Consume World
@@ -228,7 +230,6 @@ public final class PlotSquaredBindings extends BindingHelper {
 
     @BindingMatch(type = UUID.class, classifier = Consume.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)
     public UUID getUUID(ArgumentStack context) throws ParameterException {
-        PlotPlayer plr = getCurrentPlayer(context);
         String input = context.next();
         try {
             return UUID.fromString(input);
@@ -239,6 +240,16 @@ public final class PlotSquaredBindings extends BindingHelper {
             }
             return uuid;
         }
+    }
+
+    @BindingMatch(type = UUIDSet.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)
+    public UUIDSet getUUIDSet(ArgumentStack context) throws ParameterException {
+        final String input = context.next();
+        final UUIDSet uuids = new UUIDSet(context.next());
+        if (uuids.isEmpty()) {
+            throw new ParameterException(String.format("Input does not contain any valid UUIDS: %s", input));
+        }
+        return uuids;
     }
 
     @BindingMatch(type = UUID.class, behavior = BindingBehavior.CONSUMES, consumedCount = 1)

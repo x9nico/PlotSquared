@@ -34,7 +34,7 @@ import java.util.UUID;
                 .hasPermission(player, Captions.PERMISSION_ADMIN_COMMAND_TRUST),
             Captions.NO_PLOT_PERMS);
         checkTrue(args.length == 1, Captions.COMMAND_SYNTAX, getUsage());
-        final Set<UUID> uuids = MainUtil.getUUIDsFromString(args[0]);
+        final Set<UUID> uuids = MainUtil.getUUIDsFromString(args[0]).getView();
         checkTrue(!uuids.isEmpty(), Captions.INVALID_PLAYER, args[0]);
         Iterator<UUID> iter = uuids.iterator();
         int size = plot.getTrusted().size() + plot.getMembers().size();

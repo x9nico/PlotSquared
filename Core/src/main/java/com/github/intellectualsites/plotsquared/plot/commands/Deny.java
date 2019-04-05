@@ -39,7 +39,7 @@ import java.util.UUID;
             MainUtil.sendMessage(player, Captions.NO_PLOT_PERMS);
             return true;
         }
-        Set<UUID> uuids = MainUtil.getUUIDsFromString(args[0]);
+        Set<UUID> uuids = MainUtil.getUUIDsFromString(args[0]).getView();
         if (uuids.isEmpty()) {
             MainUtil.sendMessage(player, Captions.INVALID_PLAYER, args[0]);
             return false;

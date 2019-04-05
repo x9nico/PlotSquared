@@ -63,7 +63,7 @@ import java.util.UUID;
                 break;
             }
             default:
-                Set<UUID> uuids = MainUtil.getUUIDsFromString(args[0]);
+                Set<UUID> uuids = MainUtil.getUUIDsFromString(args[0]).getView();
                 if (!uuids.isEmpty()) {
                     for (UUID uuid : uuids) {
                         if (uuid == DBFunc.EVERYONE) {
