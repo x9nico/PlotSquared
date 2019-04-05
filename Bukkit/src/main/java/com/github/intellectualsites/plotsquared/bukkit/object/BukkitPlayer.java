@@ -1,19 +1,19 @@
 package com.github.intellectualsites.plotsquared.bukkit.object;
 
-import com.github.intellectualsites.plotsquared.bukkit.BukkitMain;
 import com.github.intellectualsites.plotsquared.bukkit.util.BukkitUtil;
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
 import com.github.intellectualsites.plotsquared.plot.config.Captions;
 import com.github.intellectualsites.plotsquared.plot.object.Location;
 import com.github.intellectualsites.plotsquared.plot.object.PlotBlock;
 import com.github.intellectualsites.plotsquared.plot.object.PlotPlayer;
+import com.github.intellectualsites.plotsquared.plot.object.RunnableVal;
 import com.github.intellectualsites.plotsquared.plot.util.EconHandler;
 import com.github.intellectualsites.plotsquared.plot.util.MathMan;
 import com.github.intellectualsites.plotsquared.plot.util.PlotGameMode;
 import com.github.intellectualsites.plotsquared.plot.util.PlotWeather;
 import com.github.intellectualsites.plotsquared.plot.util.StringMan;
+import com.github.intellectualsites.plotsquared.plot.util.TaskManager;
 import com.github.intellectualsites.plotsquared.plot.util.UUIDHandler;
-import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -22,10 +22,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventException;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.RegisteredListener;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -39,6 +37,8 @@ public class BukkitPlayer extends PlotPlayer {
     private boolean offline;
     private UUID uuid;
     private String name;
+
+    private final org.bukkit.Location internalLocation = new org.bukkit.Location(null, 0, 0, 0, 0f, 0f);
 
     /**
      * <p>Please do not use this method. Instead use
@@ -58,8 +58,9 @@ public class BukkitPlayer extends PlotPlayer {
     }
 
     @Override public Location getLocation() {
-        Location location = super.getLocation();
-        return location == null ? BukkitUtil.getLocation(this.player) : location;
+        final Location location = super.getLocation();
+        return location == null ? TaskManager.IMP.sync(() ->
+            BukkitUtil.getLocation(this.player, this.internalLocation), Integer.MAX_VALUE) : location;
     }
 
     @Nonnull @Override public UUID getUUID() {
@@ -74,16 +75,20 @@ public class BukkitPlayer extends PlotPlayer {
     }
 
     @Override public boolean canTeleport(Location loc) {
-        org.bukkit.Location to = BukkitUtil.getLocation(loc);
-        org.bukkit.Location from = player.getLocation();
-        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from, to);
-        callEvent(event);
-        if (event.isCancelled() || !event.getTo().equals(to)) {
-            return false;
-        }
-        event = new PlayerTeleportEvent(player, to, from);
-        callEvent(event);
-        return true;
+        return TaskManager.IMP.sync(new RunnableVal<Boolean>(true) {
+            @Override public void run(Boolean value) {
+                org.bukkit.Location to = BukkitUtil.getLocation(loc);
+                org.bukkit.Location from = player.getLocation();
+                PlayerTeleportEvent event = new PlayerTeleportEvent(player, from, to);
+                callEvent(event);
+                if (event.isCancelled() || !event.getTo().equals(to)) {
+                    this.value = false;
+                } else {
+                    event = new PlayerTeleportEvent(player, to, from);
+                    callEvent(event);
+                }
+            }
+        });
     }
 
     private void callEvent(final Event event) {
@@ -167,59 +172,53 @@ public class BukkitPlayer extends PlotPlayer {
     }
 
     @Override public void teleport(final Location location) {
-        Runnable teleportTask = () -> {
+        TaskManager.IMP.sync(() -> {
             if (Math.abs(location.getX()) >= 30000000 || Math.abs(location.getZ()) >= 30000000) {
                 return;
             }
             this.player.teleport(
                 new org.bukkit.Location(BukkitUtil.getWorld(location.getWorld()), location.getX() + 0.5,
                     location.getY(), location.getZ() + 0.5, location.getYaw(), location.getPitch()),
-                TeleportCause.COMMAND);
-        };
-        if (!Bukkit.isPrimaryThread()) {
-            Bukkit.getScheduler().runTask(JavaPlugin.getPlugin(BukkitMain.class), teleportTask);
-        } else {
-            teleportTask.run();
-        }
+                PlayerTeleportEvent.TeleportCause.COMMAND);
+        });
     }
 
     @Override public String getName() {
         if (this.name == null) {
-            this.name = this.player.getName();
+            this.name = TaskManager.IMP.sync(player::getName, Integer.MAX_VALUE);
         }
         return this.name;
     }
 
     @Override public boolean isOnline() {
-        return !this.offline && this.player.isOnline();
+        return !this.offline && TaskManager.IMP.sync(player::isOnline, Integer.MAX_VALUE);
     }
 
     @Override public void setCompassTarget(Location location) {
-        this.player.setCompassTarget(
-            new org.bukkit.Location(BukkitUtil.getWorld(location.getWorld()), location.getX(),
-                location.getY(), location.getZ()));
-
+        TaskManager.IMP.sync(() -> this.player.setCompassTarget(
+                new org.bukkit.Location(BukkitUtil.getWorld(location.getWorld()), location.getX(),
+                    location.getY(), location.getZ())));
     }
 
     @Override public Location getLocationFull() {
-        return BukkitUtil.getLocationFull(this.player);
+        return TaskManager.IMP.sync(() -> BukkitUtil.getLocationFull(this.player,
+            this.internalLocation), Integer.MAX_VALUE);
     }
 
-    @Override public void setWeather(PlotWeather weather) {
-        switch (weather) {
-            case CLEAR:
-                this.player.setPlayerWeather(WeatherType.CLEAR);
-                break;
-            case RAIN:
-                this.player.setPlayerWeather(WeatherType.DOWNFALL);
-                break;
-            case RESET:
-                this.player.resetPlayerWeather();
-                break;
-            default:
-                this.player.resetPlayerWeather();
-                break;
-        }
+    @Override public void setWeather(final PlotWeather weather) {
+        TaskManager.IMP.sync(() -> {
+            switch (weather) {
+                case CLEAR:
+                    this.player.setPlayerWeather(WeatherType.CLEAR);
+                    break;
+                case RAIN:
+                    this.player.setPlayerWeather(WeatherType.DOWNFALL);
+                    break;
+                default:
+                    this.player.resetPlayerWeather();
+                    break;
+            }
+        });
     }
 
     @Override public PlotGameMode getGameMode() {
@@ -248,57 +247,61 @@ public class BukkitPlayer extends PlotPlayer {
             case SPECTATOR:
                 this.player.setGameMode(GameMode.SPECTATOR);
                 break;
-            case SURVIVAL:
-                this.player.setGameMode(GameMode.SURVIVAL);
-                break;
             default:
                 this.player.setGameMode(GameMode.SURVIVAL);
                 break;
         }
     }
 
-    @Override public void setTime(long time) {
-        if (time != Long.MAX_VALUE) {
-            this.player.setPlayerTime(time, false);
-        } else {
-            this.player.resetPlayerTime();
-        }
+    @Override public void setTime(final long time) {
+        TaskManager.IMP.sync(() -> {
+            if (time != Long.MAX_VALUE) {
+                this.player.setPlayerTime(time, false);
+            } else {
+                this.player.resetPlayerTime();
+            }
+        });
     }
 
     @Override public boolean getFlight() {
-        return player.getAllowFlight();
+        return TaskManager.IMP.sync(player::getAllowFlight, Integer.MAX_VALUE);
     }
 
-    @Override public void setFlight(boolean fly) {
-        this.player.setAllowFlight(fly);
+    @Override public void setFlight(final boolean fly) {
+        TaskManager.IMP.sync(() -> this.player.setAllowFlight(fly));
     }
 
-    @Override public void playMusic(Location location, PlotBlock id) {
-        if (PlotBlock.isEverything(id) || id.isAir()) {
-            // Let's just stop all the discs because why not?
-            for (final Sound sound : Arrays.stream(Sound.values())
-                .filter(sound -> sound.name().contains("DISC")).collect(Collectors.toList())) {
-                player.stopSound(sound);
+    @Override public void playMusic(final Location location, final PlotBlock id) {
+        TaskManager.IMP.sync(() -> {
+            if (PlotBlock.isEverything(id) || id.isAir()) {
+                // Let's just stop all the discs because why not?
+                for (final Sound sound : Arrays.stream(Sound.values())
+                    .filter(sound -> sound.name().contains("DISC")).collect(Collectors.toList())) {
+                    player.stopSound(sound);
+                }
+                // this.player.playEffect(BukkitUtil.getLocation(location), Effect.RECORD_PLAY, Material.AIR);
+            } else {
+                // this.player.playEffect(BukkitUtil.getLocation(location), Effect.RECORD_PLAY, id.to(Material.class));
+                this.player.playSound(BukkitUtil.getLocation(location),
+                    Sound.valueOf(id.to(Material.class).name()), Float.MAX_VALUE, 1f);
             }
-            // this.player.playEffect(BukkitUtil.getLocation(location), Effect.RECORD_PLAY, Material.AIR);
-        } else {
-            // this.player.playEffect(BukkitUtil.getLocation(location), Effect.RECORD_PLAY, id.to(Material.class));
-            this.player.playSound(BukkitUtil.getLocation(location),
-                Sound.valueOf(id.to(Material.class).name()), Float.MAX_VALUE, 1f);
-        }
+        });
     }
 
     @Override public void kick(String message) {
-        this.player.kickPlayer(message);
+        TaskManager.IMP.sync(() -> this.player.kickPlayer(message));
     }
 
     @Override public void stopSpectating() {
-        if (getGameMode() == PlotGameMode.SPECTATOR) {
-            this.player.setSpectatorTarget(null);
-        }
+        TaskManager.IMP.sync(() -> {
+            if (getGameMode() == PlotGameMode.SPECTATOR) {
+                this.player.setSpectatorTarget(null);
+            }
+        });
     }
 
     @Override public boolean isBanned() {
-        return this.player.isBanned();
+        return TaskManager.IMP.sync(player::isBanned, Integer.MAX_VALUE);
     }
+
 }

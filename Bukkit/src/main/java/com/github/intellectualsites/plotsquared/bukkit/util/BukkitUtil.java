@@ -218,11 +218,26 @@ import java.util.*;
         return world != null ? world.getEntities() : new ArrayList<Entity>();
     }
 
+    public static Location getLocation(@NonNull final Entity entity, @NonNull org.bukkit.Location locationCache) {
+        final org.bukkit.Location location = entity.getLocation(locationCache);
+        final String world = location.getWorld().getName();
+        return new Location(world, location.getBlockX(), location.getBlockY(),
+            location.getBlockZ());
+    }
+
     public static Location getLocation(@NonNull final Entity entity) {
         final org.bukkit.Location location = entity.getLocation();
         String world = location.getWorld().getName();
         return new Location(world, location.getBlockX(), location.getBlockY(),
             location.getBlockZ());
+    }
+
+    public static Location getLocationFull(@NonNull final Entity entity, @NonNull final
+        org.bukkit.Location locationCache) {
+        final org.bukkit.Location location = entity.getLocation(locationCache);
+        return new Location(location.getWorld().getName(), MathMan.roundInt(location.getX()),
+            MathMan.roundInt(location.getY()), MathMan.roundInt(location.getZ()), location.getYaw(),
+            location.getPitch());
     }
 
     public static Location getLocationFull(@NonNull final Entity entity) {
