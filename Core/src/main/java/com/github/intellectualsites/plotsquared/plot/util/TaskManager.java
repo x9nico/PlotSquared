@@ -7,8 +7,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 public abstract class TaskManager {
 
@@ -115,24 +117,32 @@ public abstract class TaskManager {
     }
 
     public <T> T sync(final RunnableVal<T> function, int timeout) {
+        return sync((Callable<T>) function, timeout);
+    }
+
+    public <T> T sync(final Callable<T> function, int timeout) {
         if (PlotSquared.get().isMainThread(Thread.currentThread())) {
-            function.run();
-            return function.value;
+            try {
+                return function.call();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
         final AtomicBoolean running = new AtomicBoolean(true);
-        RunnableVal<RuntimeException> run = new RunnableVal<RuntimeException>() {
-            @Override public void run(RuntimeException value) {
+        RunnableVal<Object> run = new RunnableVal<Object>() {
+            @Override
+            public void run(Object value) {
                 try {
-                    function.run();
+                    this.value = function.call();
                 } catch (RuntimeException e) {
                     this.value = e;
                 } catch (Throwable neverHappens) {
                     neverHappens.printStackTrace();
                 } finally {
                     running.set(false);
-                }
-                synchronized (function) {
-                    function.notifyAll();
+                    synchronized (function) {
+                        function.notifyAll();
+                    }
                 }
             }
         };
@@ -146,10 +156,10 @@ public abstract class TaskManager {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        if (run.value != null) {
-            throw run.value;
+        if (run.value instanceof RuntimeException) {
+            throw (RuntimeException) run.value;
         }
-        return function.value;
+        return (T) run.value;
     }
 
     public abstract int taskRepeat(Runnable runnable, int interval);
