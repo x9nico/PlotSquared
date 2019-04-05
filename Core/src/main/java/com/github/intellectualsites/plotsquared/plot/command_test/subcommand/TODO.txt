@@ -1,6 +1,7 @@
 DONE:
 Add
 Alias
+Area
 Biome
 Chat
 Clear
@@ -9,7 +10,6 @@ Trust
 Unlink
 
 TODO:
-Area
 Auto
 Buy
 Claim

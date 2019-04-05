@@ -1,12 +1,19 @@
 package com.github.intellectualsites.plotsquared.bukkit.object;
 
+import com.github.intellectualsites.plotsquared.bukkit.BukkitMain;
 import com.github.intellectualsites.plotsquared.bukkit.util.BukkitUtil;
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
 import com.github.intellectualsites.plotsquared.plot.config.Captions;
 import com.github.intellectualsites.plotsquared.plot.object.Location;
 import com.github.intellectualsites.plotsquared.plot.object.PlotBlock;
 import com.github.intellectualsites.plotsquared.plot.object.PlotPlayer;
-import com.github.intellectualsites.plotsquared.plot.util.*;
+import com.github.intellectualsites.plotsquared.plot.util.EconHandler;
+import com.github.intellectualsites.plotsquared.plot.util.MathMan;
+import com.github.intellectualsites.plotsquared.plot.util.PlotGameMode;
+import com.github.intellectualsites.plotsquared.plot.util.PlotWeather;
+import com.github.intellectualsites.plotsquared.plot.util.StringMan;
+import com.github.intellectualsites.plotsquared.plot.util.UUIDHandler;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -18,6 +25,7 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.RegisteredListener;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -158,14 +166,21 @@ public class BukkitPlayer extends PlotPlayer {
         }
     }
 
-    @Override public void teleport(Location location) {
-        if (Math.abs(location.getX()) >= 30000000 || Math.abs(location.getZ()) >= 30000000) {
-            return;
+    @Override public void teleport(final Location location) {
+        Runnable teleportTask = () -> {
+            if (Math.abs(location.getX()) >= 30000000 || Math.abs(location.getZ()) >= 30000000) {
+                return;
+            }
+            this.player.teleport(
+                new org.bukkit.Location(BukkitUtil.getWorld(location.getWorld()), location.getX() + 0.5,
+                    location.getY(), location.getZ() + 0.5, location.getYaw(), location.getPitch()),
+                TeleportCause.COMMAND);
+        };
+        if (!Bukkit.isPrimaryThread()) {
+            Bukkit.getScheduler().runTask(JavaPlugin.getPlugin(BukkitMain.class), teleportTask);
+        } else {
+            teleportTask.run();
         }
-        this.player.teleport(
-            new org.bukkit.Location(BukkitUtil.getWorld(location.getWorld()), location.getX() + 0.5,
-                location.getY(), location.getZ() + 0.5, location.getYaw(), location.getPitch()),
-            TeleportCause.COMMAND);
     }
 
     @Override public String getName() {
