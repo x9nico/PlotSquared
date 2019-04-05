@@ -110,6 +110,14 @@ public abstract class TaskManager {
         });
     }
 
+    public void sync(final Runnable runnable) {
+        this.sync(new RunnableVal<Void>() {
+            @Override public void run(Void value) {
+                runnable.run();
+            }
+        });
+    }
+
     public <T> T sync(final RunnableVal<T> function) {
         return sync(function, Integer.MAX_VALUE);
     }
