@@ -3,6 +3,7 @@ package com.github.intellectualsites.plotsquared.plot.command_test.binding;
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
 import com.github.intellectualsites.plotsquared.plot.config.Captions;
 import com.github.intellectualsites.plotsquared.plot.config.Configuration;
+import com.github.intellectualsites.plotsquared.plot.config.Settings;
 import com.github.intellectualsites.plotsquared.plot.flag.Flag;
 import com.github.intellectualsites.plotsquared.plot.flag.Flags;
 import com.github.intellectualsites.plotsquared.plot.object.BlockBucket;
@@ -13,6 +14,7 @@ import com.github.intellectualsites.plotsquared.plot.object.PlotLoc;
 import com.github.intellectualsites.plotsquared.plot.object.PlotPlayer;
 import com.github.intellectualsites.plotsquared.plot.object.UUIDSet;
 import com.github.intellectualsites.plotsquared.plot.util.MainUtil;
+import com.github.intellectualsites.plotsquared.plot.util.Permissions;
 import com.github.intellectualsites.plotsquared.plot.util.StringMan;
 import com.github.intellectualsites.plotsquared.plot.util.UUIDHandler;
 import com.sk89q.worldedit.WorldEdit;
@@ -193,6 +195,12 @@ public final class PlotSquaredBindings extends BindingHelper {
         if (getOf(annotations, NotTimerBound.class) != null && plot.getRunning() > 0)
             throw new ParameterException(Captions.WAIT_FOR_TIMER.s());
         UUID uuid = null;
+        if (getOf(annotations, NotDone.class) != null && Settings.Done.RESTRICT_BUILDING && Flags.DONE.isSet(plot)) {
+            final PlotPlayer plotPlayer = getCurrentPlayer(context);
+            if (Permissions.hasPermission(plotPlayer, Captions.PERMISSION_CONTINUE)) {
+                throw new ParameterException(Captions.DONE_ALREADY_DONE.s());
+            }
+        }
         if (getOf(annotations, Owner.class) != null) {
             uuid = uuid != null ? uuid : getCurrentUUID(context);
             if (!plot.isOwner(uuid)) throw new ParameterException(Captions.NO_PLOT_PERMS.s());

@@ -714,6 +714,7 @@ public enum Captions {
 
     CLEARING_PLOT("$2Clearing plot async.", "Working"), CLEARING_DONE(
         "$4Clear completed! Took %sms.", "Working"),
+    CLEARING_FAILED("$2The plot could not be cleared.", "Working"),
 
     DELETING_DONE("$4Delete completed! Took %sms.", "Working"), /*
      * Claiming
