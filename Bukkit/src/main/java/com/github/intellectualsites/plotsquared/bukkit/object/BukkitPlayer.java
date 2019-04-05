@@ -38,6 +38,8 @@ public class BukkitPlayer extends PlotPlayer {
     private UUID uuid;
     private String name;
 
+    private final org.bukkit.Location internalLocation = new org.bukkit.Location(null, 0, 0, 0, 0f, 0f);
+
     /**
      * <p>Please do not use this method. Instead use
      * BukkitUtil.getPlayer(Player), as it caches player objects.</p>
@@ -56,8 +58,9 @@ public class BukkitPlayer extends PlotPlayer {
     }
 
     @Override public Location getLocation() {
-        Location location = super.getLocation();
-        return location == null ? BukkitUtil.getLocation(this.player) : location;
+        final Location location = super.getLocation();
+        return location == null ? TaskManager.IMP.sync(() ->
+            BukkitUtil.getLocation(this.player, this.internalLocation), Integer.MAX_VALUE) : location;
     }
 
     @Nonnull @Override public UUID getUUID() {
@@ -182,13 +185,13 @@ public class BukkitPlayer extends PlotPlayer {
 
     @Override public String getName() {
         if (this.name == null) {
-            this.name = this.player.getName();
+            this.name = TaskManager.IMP.sync(player::getName, Integer.MAX_VALUE);
         }
         return this.name;
     }
 
     @Override public boolean isOnline() {
-        return !this.offline && this.player.isOnline();
+        return !this.offline && TaskManager.IMP.sync(player::isOnline, Integer.MAX_VALUE);
     }
 
     @Override public void setCompassTarget(Location location) {
@@ -198,7 +201,8 @@ public class BukkitPlayer extends PlotPlayer {
     }
 
     @Override public Location getLocationFull() {
-        return BukkitUtil.getLocationFull(this.player);
+        return TaskManager.IMP.sync(() -> BukkitUtil.getLocationFull(this.player,
+            this.internalLocation), Integer.MAX_VALUE);
     }
 
     @Override public void setWeather(final PlotWeather weather) {
@@ -260,7 +264,7 @@ public class BukkitPlayer extends PlotPlayer {
     }
 
     @Override public boolean getFlight() {
-        return player.getAllowFlight();
+        return TaskManager.IMP.sync(player::getAllowFlight, Integer.MAX_VALUE);
     }
 
     @Override public void setFlight(final boolean fly) {
@@ -297,7 +301,7 @@ public class BukkitPlayer extends PlotPlayer {
     }
 
     @Override public boolean isBanned() {
-        return this.player.isBanned();
+        return TaskManager.IMP.sync(player::isBanned, Integer.MAX_VALUE);
     }
 
 }
