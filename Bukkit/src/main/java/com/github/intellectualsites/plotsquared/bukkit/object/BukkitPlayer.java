@@ -43,8 +43,6 @@ public class BukkitPlayer extends PlotPlayer {
     /**
      * <p>Please do not use this method. Instead use
      * BukkitUtil.getPlayer(Player), as it caches player objects.</p>
-     *
-     * @param player
      */
     public BukkitPlayer(Player player) {
         this.player = player;
@@ -59,8 +57,7 @@ public class BukkitPlayer extends PlotPlayer {
 
     @Override public Location getLocation() {
         final Location location = super.getLocation();
-        return location == null ? TaskManager.IMP.sync(() ->
-            BukkitUtil.getLocation(this.player, this.internalLocation), Integer.MAX_VALUE) : location;
+        return location == null ? BukkitUtil.getLocation(this.player, this.internalLocation) : location;
     }
 
     @Nonnull @Override public UUID getUUID() {
@@ -201,8 +198,7 @@ public class BukkitPlayer extends PlotPlayer {
     }
 
     @Override public Location getLocationFull() {
-        return TaskManager.IMP.sync(() -> BukkitUtil.getLocationFull(this.player,
-            this.internalLocation), Integer.MAX_VALUE);
+        return BukkitUtil.getLocationFull(this.player, this.internalLocation);
     }
 
     @Override public void setWeather(final PlotWeather weather) {
