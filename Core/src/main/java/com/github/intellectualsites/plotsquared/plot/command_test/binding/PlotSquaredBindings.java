@@ -190,6 +190,8 @@ public final class PlotSquaredBindings extends BindingHelper {
             throw new ParameterException(Captions.UNLINK_IMPOSSIBLE.s());
         if (getOf(annotations, Unmerged.class) != null && plot.isMerged())
             throw new ParameterException(Captions.REQUIRES_UNMERGED.s());
+        if (getOf(annotations, NotTimerBound.class) != null && plot.getRunning() > 0)
+            throw new ParameterException(Captions.WAIT_FOR_TIMER.s());
         UUID uuid = null;
         if (getOf(annotations, Owner.class) != null) {
             uuid = uuid != null ? uuid : getCurrentUUID(context);
