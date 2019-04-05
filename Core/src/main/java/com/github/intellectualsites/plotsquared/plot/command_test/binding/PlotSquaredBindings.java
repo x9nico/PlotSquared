@@ -146,6 +146,8 @@ public final class PlotSquaredBindings extends BindingHelper {
 
     @BindingMatch(type = Location.class, behavior = BindingBehavior.PROVIDES)
     public Location getCurrentLocation(final ArgumentStack context) {
+        Location loc = context.getContext().getLocals().get(Location.class);
+        if (loc != null) return loc;
         final PlotPlayer plr = getCurrentPlayer(context);
         return plr.getLocation();
     }

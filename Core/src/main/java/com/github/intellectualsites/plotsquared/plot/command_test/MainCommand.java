@@ -2,7 +2,13 @@ package com.github.intellectualsites.plotsquared.plot.command_test;
 
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
 import com.github.intellectualsites.plotsquared.plot.command_test.binding.PlotSquaredBindings;
+import com.github.intellectualsites.plotsquared.plot.config.Captions;
+import com.github.intellectualsites.plotsquared.plot.object.ConsolePlayer;
+import com.github.intellectualsites.plotsquared.plot.object.Location;
+import com.github.intellectualsites.plotsquared.plot.object.Plot;
+import com.github.intellectualsites.plotsquared.plot.object.PlotArea;
 import com.github.intellectualsites.plotsquared.plot.object.PlotPlayer;
+import com.github.intellectualsites.plotsquared.plot.util.Permissions;
 import com.github.intellectualsites.plotsquared.plot.util.TaskManager;
 import com.google.common.base.Joiner;
 import com.sk89q.minecraft.util.commands.Command;
@@ -23,6 +29,8 @@ import com.sk89q.worldedit.util.command.Dispatcher;
 import com.sk89q.worldedit.util.command.fluent.CommandGraph;
 import com.sk89q.worldedit.util.command.parametric.ParametricBuilder;
 import com.sk89q.worldedit.util.eventbus.Subscribe;
+
+import java.util.Arrays;
 
 public class MainCommand {
     private static MainCommand instance;
@@ -69,30 +77,77 @@ public class MainCommand {
         return instance;
     }
 
-    public String[] commandDetection(String[] split) {
+    public String[] commandDetection(CommandLocals locals, String[] split) {
         return split;
     }
 
     @Subscribe
     public void handleCommand(CommandEvent event) {
         Actor actor = event.getActor();
-        PlotPlayer plr = PlotPlayer.wrap(actor.getName());
+        PlotPlayer player = PlotPlayer.wrap(actor.getName());
         // TODO check player confirmation
 
         CommandLocals locals = new CommandLocals();
         locals.put(Actor.class, actor);
-        locals.put(PlotPlayer.class, plr);
+        locals.put(PlotPlayer.class, player);
+        locals.put(Location.class, player.getLocation());
+        locals.put(Plot.class, player.getCurrentPlot());
         locals.put("arguments", event.getArguments());
 
-        String[] split = commandDetection(event.getArguments().split(" "));
+        String[] split = commandDetection(locals, event.getArguments().split(" "));
 
-        // No command found!
-        if (!dispatcher.contains(split[0])) {
+
+        // Optional command scope - Change plot for console //
+        Location loc;
+        Plot plot;
+        boolean tp;
+        if (split.length > 1 && split[0].indexOf(';') != -1 && dispatcher.contains(split[1])) {
+            PlotArea area = player.getApplicablePlotArea();
+            Plot newPlot = Plot.fromString(area, split[0]);
+
+            if (newPlot != null
+                &&
+                (player instanceof ConsolePlayer ||
+                    newPlot.getArea().equals(area) ||
+                    Permissions.hasPermission(player, Captions.PERMISSION_ADMIN))
+                &&
+                !newPlot.isDenied(player.getUUID())) {
+
+                Location newLoc = newPlot.getCenter();
+                if (player.canTeleport(newLoc)) {
+                    // Save meta
+                    loc = player.getMeta(PlotPlayer.META_LOCATION);
+                    plot = player.getMeta(PlotPlayer.META_LAST_PLOT);
+                    tp = true;
+                    // Set loc
+                    player.setMeta(PlotPlayer.META_LOCATION, newLoc);
+                    player.setMeta(PlotPlayer.META_LAST_PLOT, newPlot);
+                    locals.put(Plot.class, plot);
+                    locals.put(Location.class, loc);
+                } else {
+                    Captions.BORDER.send(player);
+                    return;
+                }
+                // Trim command
+                split = Arrays.copyOfRange(split, 1, split.length);
+            } else {
+                // Invalid command
+                return;
+            }
+        } else if (!dispatcher.contains(split[0])) {
+            // Invalid command
             return;
+        } else {
+            tp = false;
+            plot = null;
+            loc = null;
         }
+        // End command scope //
+
+        final String[] args = split;
         TaskManager.IMP.taskAsync(new Runnable() {
             @Override public void run() {
-                synchronized (plr) {
+                synchronized (player) {
                     try {
                         // This is a bit of a hack, since the call method can only throw CommandExceptions
                         // everything needs to be wrapped at least once. Which means to handle all WorldEdit
@@ -101,14 +156,13 @@ public class MainCommand {
                         try {
 
                             // TODO
-                            // Relocation
                             // Confirmation
                             // Cost
 
                             Command command = null; // TODO get command
                             // Check command cost
 
-                            Object result = dispatcher.call(Joiner.on(" ").join(split), locals, new String[0]);
+                            Object result = dispatcher.call(Joiner.on(" ").join(args), locals, new String[0]);
 
                             if (result == Boolean.TRUE) {
                                 // If cost && true, then charge
@@ -122,6 +176,19 @@ public class MainCommand {
                     } finally {
                         // cleanup
                         event.setCancelled(true);
+
+                        if (tp && !(player instanceof ConsolePlayer)) {
+                            if (loc == null) {
+                                player.deleteMeta(PlotPlayer.META_LOCATION);
+                            } else {
+                                player.setMeta(PlotPlayer.META_LOCATION, loc);
+                            }
+                            if (plot == null) {
+                                player.deleteMeta(PlotPlayer.META_LAST_PLOT);
+                            } else {
+                                player.setMeta(PlotPlayer.META_LAST_PLOT, plot);
+                            }
+                        }
                     }
                 }
             }
