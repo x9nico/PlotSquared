@@ -10,7 +10,6 @@ import java.util.Iterator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 public abstract class TaskManager {
 
@@ -113,11 +112,10 @@ public abstract class TaskManager {
     }
 
     public void sync(final Runnable runnable) {
-        this.sync(new RunnableVal<Void>() {
-            @Override public void run(Void value) {
-                runnable.run();
-            }
-        });
+        this.sync(() -> {
+            runnable.run();
+            return null;
+        }, Integer.MAX_VALUE);
     }
 
     public <T> T sync(final RunnableVal<T> function) {
