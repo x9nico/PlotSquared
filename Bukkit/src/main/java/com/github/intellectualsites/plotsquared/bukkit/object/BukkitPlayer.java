@@ -185,13 +185,13 @@ public class BukkitPlayer extends PlotPlayer {
 
     @Override public String getName() {
         if (this.name == null) {
-            this.name = TaskManager.IMP.sync(player::getName, Integer.MAX_VALUE);
+            this.name = player.getName();
         }
         return this.name;
     }
 
     @Override public boolean isOnline() {
-        return !this.offline && TaskManager.IMP.sync(player::isOnline, Integer.MAX_VALUE);
+        return !this.offline && this.player.isOnline();
     }
 
     @Override public void setCompassTarget(Location location) {
@@ -237,34 +237,34 @@ public class BukkitPlayer extends PlotPlayer {
     }
 
     @Override public void setGameMode(PlotGameMode gameMode) {
-        switch (gameMode) {
-            case ADVENTURE:
-                this.player.setGameMode(GameMode.ADVENTURE);
-                break;
-            case CREATIVE:
-                this.player.setGameMode(GameMode.CREATIVE);
-                break;
-            case SPECTATOR:
-                this.player.setGameMode(GameMode.SPECTATOR);
-                break;
-            default:
-                this.player.setGameMode(GameMode.SURVIVAL);
-                break;
-        }
-    }
-
-    @Override public void setTime(final long time) {
         TaskManager.IMP.sync(() -> {
-            if (time != Long.MAX_VALUE) {
-                this.player.setPlayerTime(time, false);
-            } else {
-                this.player.resetPlayerTime();
+            switch (gameMode) {
+                case ADVENTURE:
+                    this.player.setGameMode(GameMode.ADVENTURE);
+                    break;
+                case CREATIVE:
+                    this.player.setGameMode(GameMode.CREATIVE);
+                    break;
+                case SPECTATOR:
+                    this.player.setGameMode(GameMode.SPECTATOR);
+                    break;
+                default:
+                    this.player.setGameMode(GameMode.SURVIVAL);
+                    break;
             }
         });
     }
 
+    @Override public void setTime(final long time) {
+        if (time != Long.MAX_VALUE) {
+            this.player.setPlayerTime(time, false);
+        } else {
+            this.player.resetPlayerTime();
+        }
+    }
+
     @Override public boolean getFlight() {
-        return TaskManager.IMP.sync(player::getAllowFlight, Integer.MAX_VALUE);
+        return player.getAllowFlight();
     }
 
     @Override public void setFlight(final boolean fly) {
@@ -301,7 +301,7 @@ public class BukkitPlayer extends PlotPlayer {
     }
 
     @Override public boolean isBanned() {
-        return TaskManager.IMP.sync(player::isBanned, Integer.MAX_VALUE);
+        return this.player.isBanned();
     }
 
 }
