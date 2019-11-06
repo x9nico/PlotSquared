@@ -2,6 +2,7 @@ package com.github.intellectualsites.plotsquared.plot.object;
 
 import com.github.intellectualsites.plotsquared.plot.commands.Template;
 import com.github.intellectualsites.plotsquared.plot.config.Settings;
+import com.sk89q.worldedit.EditSession;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -33,11 +34,11 @@ public abstract class PlotManager {
     /*
      * Plot clearing (return false if you do not support some method)
      */
-    public abstract boolean clearPlot(Plot plot, Runnable whenDone);
+    public abstract boolean clearPlot(Plot plot, EditSession editSession);
 
-    public abstract boolean claimPlot(Plot plot);
+    public abstract boolean claimPlot(Plot plot, EditSession editSession);
 
-    public abstract boolean unClaimPlot(Plot plot, Runnable whenDone);
+    public abstract boolean unClaimPlot(Plot plot, EditSession editSession);
 
     /**
      * Retrieves the location of where a sign should be for a plot.
@@ -53,23 +54,23 @@ public abstract class PlotManager {
      */
     public abstract String[] getPlotComponents(PlotId plotId);
 
-    public abstract boolean setComponent(PlotId plotId, String component, BlockBucket blocks);
+    public abstract boolean setComponent(PlotId plotId, String component, BlockBucket blocks, EditSession editSession);
 
     /*
      * PLOT MERGING (return false if your generator does not support plot
      * merging).
      */
-    public abstract boolean createRoadEast(Plot plot);
+    public abstract boolean createRoadEast(Plot plot, EditSession editSession);
 
-    public abstract boolean createRoadSouth(Plot plot);
+    public abstract boolean createRoadSouth(Plot plot, EditSession editSession);
 
-    public abstract boolean createRoadSouthEast(Plot plot);
+    public abstract boolean createRoadSouthEast(Plot plot, EditSession editSession);
 
-    public abstract boolean removeRoadEast(Plot plot);
+    public abstract boolean removeRoadEast(Plot plot, EditSession editSession);
 
-    public abstract boolean removeRoadSouth(Plot plot);
+    public abstract boolean removeRoadSouth(Plot plot, EditSession editSession);
 
-    public abstract boolean removeRoadSouthEast(Plot plot);
+    public abstract boolean removeRoadSouthEast(Plot plot, EditSession editSession);
 
     public abstract boolean startPlotMerge(List<PlotId> plotIds);
 

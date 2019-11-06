@@ -106,7 +106,7 @@ import java.util.Set;
         if (ExpireManager.IMP != null) {
             plots.removeAll(ExpireManager.IMP.getPendingExpired());
         }
-        result.value1 = new HashSet<>(ChunkManager.manager.getChunkChunks(world));
+        result.value1 = new HashSet<>(ChunkManager.manager.getRegions(world));
         result.value2 = new HashSet<>();
         MainUtil.sendMessage(null, " - MCA #: " + result.value1.size());
         MainUtil.sendMessage(null, " - CHUNKS: " + (result.value1.size() * 1024) + " (max)");

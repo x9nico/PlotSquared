@@ -110,7 +110,7 @@ public abstract class WorldUtil {
                         int brz = bot.getZ() >> 9;
                         int trx = top.getX() >> 9;
                         int trz = top.getZ() >> 9;
-                        Set<BlockVector2> files = ChunkManager.manager.getChunkChunks(bot.getWorld());
+                        Set<BlockVector2> files = ChunkManager.manager.getRegions(bot.getWorld());
                         for (BlockVector2 mca : files) {
                             if (mca.getX() >= brx && mca.getX() <= trx && mca.getZ() >= brz && mca.getZ() <= trz) {
                                 final File file = getMcr(plot.getWorldName(), mca.getX(), mca.getZ());

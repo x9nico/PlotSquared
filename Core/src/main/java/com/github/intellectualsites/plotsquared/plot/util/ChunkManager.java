@@ -3,6 +3,7 @@ package com.github.intellectualsites.plotsquared.plot.util;
 import com.github.intellectualsites.plotsquared.plot.PlotSquared;
 import com.github.intellectualsites.plotsquared.plot.object.Location;
 import com.github.intellectualsites.plotsquared.plot.object.Plot;
+import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.github.intellectualsites.plotsquared.plot.object.RunnableVal;
 import com.github.intellectualsites.plotsquared.plot.util.block.GlobalBlockQueue;
@@ -84,7 +85,7 @@ public abstract class ChunkManager {
         final RunnableVal<BlockVector2> task, final Runnable whenDone) {
         TaskManager.runTaskAsync(() -> {
             HashSet<BlockVector2> chunks = new HashSet<>();
-            Set<BlockVector2> mcrs = manager.getChunkChunks(world);
+            Set<BlockVector2> mcrs = manager.getRegions(world);
             for (BlockVector2 mcr : mcrs) {
                 int bx = mcr.getX() << 9;
                 int bz = mcr.getZ() << 9;
@@ -215,7 +216,7 @@ public abstract class ChunkManager {
 
     public abstract void unloadChunk(String world, BlockVector2 loc, boolean save);
 
-    public Set<BlockVector2> getChunkChunks(String world) {
+    public Set<BlockVector2> getRegions(String world) {
         File folder =
             new File(PlotSquared.get().IMP.getWorldContainer(), world + File.separator + "region");
         File[] regionFiles = folder.listFiles();
@@ -279,8 +280,7 @@ public abstract class ChunkManager {
     /**
      * Copy a region to a new location (in the same world)
      */
-    public abstract boolean copyRegion(Location pos1, Location pos2, Location newPos,
-        Runnable whenDone);
+    public abstract boolean copyRegion(Location pos1, Location pos2, Location newPos, EditSession editSession);
 
     /**
      * Assumptions:<br>
@@ -289,14 +289,11 @@ public abstract class ChunkManager {
      *
      * @param pos1
      * @param pos2
-     * @param whenDone
      * @return
      */
-    public abstract boolean regenerateRegion(Location pos1, Location pos2, boolean ignoreAugment,
-        Runnable whenDone);
+    public abstract boolean regenerateRegion(Location pos1, Location pos2, boolean ignoreAugment, EditSession editSession);
 
-    public abstract void clearAllEntities(Location pos1, Location pos2);
+    public abstract void clearAllEntities(Location pos1, Location pos2, EditSession editSession);
 
-    public abstract void swap(Location bot1, Location top1, Location bot2, Location top2,
-        Runnable whenDone);
+    public abstract void swap(Location bot1, Location top1, Location bot2, Location top2, EditSession editSession);
 }

@@ -109,8 +109,8 @@ public class BukkitChunkManager extends ChunkManager {
         return map;
     }
 
-    @Override public Set<BlockVector2> getChunkChunks(String world) {
-        Set<BlockVector2> chunks = super.getChunkChunks(world);
+    @Override public Set<BlockVector2> getRegions(String world) {
+        Set<BlockVector2> chunks = super.getRegions(world);
         for (Chunk chunk : Bukkit.getWorld(world).getLoadedChunks()) {
             BlockVector2 loc = BlockVector2.at(chunk.getX() >> 5, chunk.getZ() >> 5);
             chunks.add(loc);

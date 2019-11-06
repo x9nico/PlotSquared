@@ -27,13 +27,28 @@ import com.github.intellectualsites.plotsquared.plot.util.block.GlobalBlockQueue
 import com.github.intellectualsites.plotsquared.plot.util.block.LocalBlockQueue;
 import com.github.intellectualsites.plotsquared.plot.util.expiry.ExpireManager;
 import com.github.intellectualsites.plotsquared.plot.util.expiry.PlotAnalysis;
+import com.github.intellectualsites.plotsquared.plot.util.world.OperationUtil;
+import com.google.common.base.Function;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.sk89q.jnbt.CompoundTag;
+import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.WorldEditException;
+import com.sk89q.worldedit.function.FlatRegionFunction;
+import com.sk89q.worldedit.function.operation.Operation;
+import com.sk89q.worldedit.function.operation.Operations;
+import com.sk89q.worldedit.function.visitor.FlatRegionVisitor;
+import com.sk89q.worldedit.function.visitor.RegionVisitor;
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
+import com.sk89q.worldedit.regions.FlatRegion;
+import com.sk89q.worldedit.regions.Regions;
+import com.sk89q.worldedit.world.biome.BiomeType;
+import com.sk89q.worldedit.world.biome.BiomeTypes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,7 +70,10 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -846,114 +864,79 @@ public class Plot {
     /**
      * Clear a plot.
      *
-     * @param whenDone A runnable to execute when clearing finishes, or null
-     * @see this#clear(boolean, boolean, Runnable)
-     * @see #deletePlot(Runnable) to clear and delete a plot
+     * @see this#clear(PlotPlayer, boolean, boolean)
+     * @see #deletePlot(PlotPlayer)
      */
-    public void clear(Runnable whenDone) {
-        this.clear(false, false, whenDone);
+    public ListenableFuture<Boolean> clear() {
+        return this.clear(null, false, false);
     }
 
-    public boolean clear(boolean checkRunning, final boolean isDelete, final Runnable whenDone) {
+    public ListenableFuture<Boolean> clear(PlotPlayer plotPlayer, boolean checkRunning, final boolean isDelete) {
         if (checkRunning && this.getRunning() != 0) {
-            return false;
+            return Futures.immediateFuture(false);
         }
         if (isDelete) {
             if (!EventUtil.manager.callDelete(this)) {
-                return false;
+                return Futures.immediateFuture(false);
             }
         } else {
             if (!EventUtil.manager.callClear(this)) {
-                return false;
+                return Futures.immediateFuture(false);
             }
         }
         final Set<CuboidRegion> regions = this.getRegions();
-        final Set<Plot> plots = this.getConnectedPlots();
-        final ArrayDeque<Plot> queue = new ArrayDeque<>(plots);
         if (isDelete) {
             this.removeSign();
         }
-        this.unlinkPlot(true, !isDelete);
+
         final PlotManager manager = this.area.getPlotManager();
-        Runnable run = new Runnable() {
-            @Override public void run() {
-                if (queue.isEmpty()) {
-                    Runnable run = () -> {
-//                        for (CuboidRegion region : regions) {
-//                            Location[] corners = MainUtil.getCorners(getWorldName(), region);
-//                            ChunkManager.manager.clearAllEntities(corners[0], corners[1]);
-//                        }
-                        TaskManager.runTask(whenDone);
-                    };
-                    for (Plot current : plots) {
-                        if (isDelete || current.owner == null) {
-                            manager.unClaimPlot(current, null);
-                        } else {
-                            manager.claimPlot(current);
-                        }
-                    }
-                    GlobalBlockQueue.IMP.addEmptyTask(run);
-                    return;
-                }
-                Plot current = queue.poll();
+        return OperationUtil.withEditSession(plotPlayer, editSession -> {
+            this.unlinkPlot(plotPlayer, true, !isDelete);
+
+            final Set<Plot> plots = this.getConnectedPlots();
+            for (Plot plot : plots) {
                 if (Plot.this.area.TERRAIN != 0) {
                     try {
-                        ChunkManager.manager
-                            .regenerateRegion(current.getBottomAbs(), current.getTopAbs(), false,
-                                this);
+                        ChunkManager.manager.regenerateRegion(plot.getBottomAbs(), plot.getTopAbs(), false, editSession);
                     } catch (UnsupportedOperationException exception) {
                         MainUtil.sendMessage(null,
                             "Please ask md_5 to fix regenerateChunk() because it breaks plugins. We apologize for the inconvenience");
                         return;
                     }
-                    return;
+                } else {
+                    manager.clearPlot(plot, editSession);
                 }
-                manager.clearPlot(current, this);
             }
-        };
-        run.run();
-        return true;
+            for (Plot plot : plots) {
+                if (isDelete || plot.owner == null) {
+                    manager.unClaimPlot(plot, null);
+                } else {
+                    manager.claimPlot(plot, editSession);
+                }
+            }
+        });
     }
 
     /**
      * Sets the biome for a plot asynchronously.
      *
      * @param biome    The biome e.g. "forest"
-     * @param whenDone The task to run when finished, or null
      */
-    public void setBiome(final String biome, final Runnable whenDone) {
+    public Future<Boolean> setBiome(PlotPlayer plotPlayer, final BiomeType biome) {
         final ArrayDeque<CuboidRegion> regions = new ArrayDeque<>(this.getRegions());
-        final int extendBiome;
-        if (area instanceof SquarePlotWorld) {
-            extendBiome = (((SquarePlotWorld) area).ROAD_WIDTH > 0) ? 1 : 0;
-        } else {
-            extendBiome = 0;
-        }
-        Runnable run = new Runnable() {
-            @Override public void run() {
-                if (regions.isEmpty()) {
-                    Plot.this.refreshChunks();
-                    TaskManager.runTask(whenDone);
-                    return;
+        final boolean extend = (area instanceof SquarePlotWorld && ((SquarePlotWorld) area).ROAD_WIDTH > 0);
+        return OperationUtil.withEditSession(plotPlayer, editSession -> {
+            for (CuboidRegion region : regions) {
+                if (extend) {
+                    region = region.clone();
+                    region.expand(BlockVector3.ONE, BlockVector3.ZERO.subtract(BlockVector3.ONE));
                 }
-                CuboidRegion region = regions.poll();
-                Location pos1 = new Location(getWorldName(), region.getMinimumPoint().getX() - extendBiome, region.getMinimumPoint().getY(),
-                    region.getMinimumPoint().getZ() - extendBiome);
-                Location pos2 = new Location(getWorldName(), region.getMaximumPoint().getX() + extendBiome, region.getMaximumPoint().getY(),
-                    region.getMaximumPoint().getZ() + extendBiome);
-                ChunkManager.chunkTask(pos1, pos2, new RunnableVal<int[]>() {
-                    @Override public void run(int[] value) {
-                        BlockVector2 loc = BlockVector2.at(value[0], value[1]);
-                        ChunkManager.manager.loadChunk(getWorldName(), loc, false);
-                        MainUtil.setBiome(getWorldName(), value[2], value[3], value[4], value[5],
-                            biome);
-                        ChunkManager.manager.unloadChunk(getWorldName(), loc, true);
-                    }
-                }, this, 5);
-
+                FlatRegion flat = Regions.asFlatRegion(region);
+                FlatRegionVisitor visitor =
+                    new FlatRegionVisitor(flat,pos -> editSession.setBiome(pos, biome));
+                Operations.completeBlindly(visitor);
             }
-        };
-        run.run();
+        });
     }
 
     /**
@@ -963,9 +946,9 @@ public class Plot {
      * @param createSign whether to recreate signs
      * @return success/!cancelled
      */
-    public boolean unlinkPlot(boolean createRoad, boolean createSign) {
+    public Future<Boolean> unlinkPlot(PlotPlayer plotPlayer, boolean createRoad, boolean createSign) {
         if (!this.isMerged()) {
-            return false;
+            return Futures.immediateFuture(false);
         }
         final Set<Plot> plots = this.getConnectedPlots();
         ArrayList<PlotId> ids = new ArrayList<>(plots.size());
@@ -975,46 +958,50 @@ public class Plot {
         }
         boolean result = EventUtil.manager.callUnlink(this.area, ids);
         if (!result) {
-            return false;
+            return Futures.immediateFuture(false);
         }
         this.clearRatings();
         if (createSign) {
             this.removeSign();
         }
         PlotManager manager = this.area.getPlotManager();
+
         if (createRoad) {
             manager.startPlotUnlink(ids);
         }
-        if (this.area.TERRAIN != 3 && createRoad) {
-            for (Plot current : plots) {
-                if (current.getMerged(Direction.EAST)) {
-                    manager.createRoadEast(current);
-                    if (current.getMerged(Direction.SOUTH)) {
-                        manager.createRoadSouth(current);
-                        if (current.getMerged(Direction.SOUTHEAST)) {
-                            manager.createRoadSouthEast(current);
+        return OperationUtil.withEditSession(plotPlayer, new Consumer<EditSession>() {
+            @Override public void accept(EditSession editSession) {
+                if (area.TERRAIN != 3 && createRoad) {
+                    for (Plot current : plots) {
+                        if (current.getMerged(Direction.EAST)) {
+                            manager.createRoadEast(current, editSession);
+                            if (current.getMerged(Direction.SOUTH)) {
+                                manager.createRoadSouth(current, editSession);
+                                if (current.getMerged(Direction.SOUTHEAST)) {
+                                    manager.createRoadSouthEast(current, editSession);
+                                }
+                            }
+                        } else if (current.getMerged(Direction.SOUTH)) {
+                            manager.createRoadSouth(current, editSession);
                         }
                     }
-                } else if (current.getMerged(Direction.SOUTH)) {
-                    manager.createRoadSouth(current);
+                }
+                for (Plot current : plots) {
+                    boolean[] merged = new boolean[] {false, false, false, false};
+                    current.setMerged(merged);
+                }
+                if (createSign) {
+                    GlobalBlockQueue.IMP.addEmptyTask(() -> {
+                        for (Plot current : plots) {
+                            current.setSign(MainUtil.getName(current.owner));
+                        }
+                    });
+                }
+                if (createRoad) {
+                    manager.finishPlotUnlink(ids);
                 }
             }
-        }
-        for (Plot current : plots) {
-            boolean[] merged = new boolean[] {false, false, false, false};
-            current.setMerged(merged);
-        }
-        if (createSign) {
-            GlobalBlockQueue.IMP.addEmptyTask(() -> {
-                for (Plot current : plots) {
-                    current.setSign(MainUtil.getName(current.owner));
-                }
-            });
-        }
-        if (createRoad) {
-            manager.finishPlotUnlink(ids);
-        }
-        return true;
+        });
     }
 
     /**
@@ -1116,20 +1103,23 @@ public class Plot {
      * Delete a plot (use null for the runnable if you don't need to be notified on completion)
      *
      * @see PlotSquared#removePlot(Plot, boolean)
-     * @see #clear(boolean, boolean, Runnable) to simply clear a plot
+     * @see #clear(PlotPlayer, boolean, boolean) to simply clear a plot
      */
-    public boolean deletePlot(final Runnable whenDone) {
+    public ListenableFuture<Boolean> deletePlot(PlotPlayer plotPlayer) {
         if (!this.hasOwner()) {
-            return false;
+            return Futures.immediateFuture(false);
         }
         final Set<Plot> plots = this.getConnectedPlots();
-        this.clear(false, true, () -> {
-            for (Plot current : plots) {
-                current.unclaim();
+        ListenableFuture<Boolean> clear = this.clear(plotPlayer, false, true);
+        ListenableFuture<Boolean> delete = Futures.transform(clear, input -> {
+            if (input) {
+                for (Plot current : plots) {
+                    current.unclaim();
+                }
             }
-            TaskManager.runTask(whenDone);
+            return input;
         });
-        return true;
+        return delete;
     }
 
     /**
@@ -1231,10 +1221,10 @@ public class Plot {
      * Unlink a plot and remove the roads
      *
      * @return true if plot was linked
-     * @see this#unlinkPlot(boolean, boolean)
+     * @see this#unlinkPlot(PlotPlayer, boolean, boolean)
      */
-    public boolean unlink() {
-        return this.unlinkPlot(true, true);
+    public Future<Boolean> unlink(PlotPlayer plotPlayer) {
+        return this.unlinkPlot(plotPlayer, true, true);
     }
 
     public Location getCenter() {
@@ -1540,7 +1530,8 @@ public class Plot {
                     }
                 });
         }
-        plotworld.getPlotManager().claimPlot(this);
+        OperationUtil.withEditSession(player,
+            editSession -> plotworld.getPlotManager().claimPlot(this, editSession));
         return true;
     }
 

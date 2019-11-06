@@ -146,7 +146,7 @@ public abstract class HybridUtils {
             return false;
         }
         HybridUtils.UPDATE = true;
-        Set<BlockVector2> regions = ChunkManager.manager.getChunkChunks(area.worldname);
+        Set<BlockVector2> regions = ChunkManager.manager.getRegions(area.worldname);
         return scheduleRoadUpdate(area, regions, extend);
     }
 
