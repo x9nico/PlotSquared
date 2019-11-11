@@ -10,6 +10,7 @@ import com.github.intellectualsites.plotsquared.plot.util.block.GlobalBlockQueue
 import com.github.intellectualsites.plotsquared.plot.util.block.LocalBlockQueue;
 import com.github.intellectualsites.plotsquared.plot.util.block.ScopedLocalBlockQueue;
 import com.sk89q.worldedit.math.BlockVector2;
+import com.sk89q.worldedit.regions.CuboidRegion;
 
 import java.io.File;
 import java.util.ArrayList;

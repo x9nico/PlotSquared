@@ -3,6 +3,7 @@ package com.github.intellectualsites.plotsquared.plot.object;
 import com.github.intellectualsites.plotsquared.plot.commands.Template;
 import com.github.intellectualsites.plotsquared.plot.config.Settings;
 import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.function.pattern.Pattern;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -54,7 +55,7 @@ public abstract class PlotManager {
      */
     public abstract String[] getPlotComponents(PlotId plotId);
 
-    public abstract boolean setComponent(PlotId plotId, String component, BlockBucket blocks, EditSession editSession);
+    public abstract boolean setComponent(PlotId plotId, String component, Pattern blocks, EditSession editSession);
 
     /*
      * PLOT MERGING (return false if your generator does not support plot
@@ -91,6 +92,21 @@ public abstract class PlotManager {
         return 255;
     }
 
-    public abstract boolean regenerateAllPlotWalls();
+    /**
+     * Sets all the blocks along all the plot walls to their correct state (claimed or unclaimed).
+     *
+     * @return true if the wall blocks were successfully set
+     */
+    public boolean regenerateAllPlotWalls() {
+        boolean success = true;
+        for (Plot plot : plotArea.getPlots()) {
+            if (plot.hasOwner()) {
+                success &= claimPlot(plot);
+            } else {
+                success &= unClaimPlot(plot, null);
+            }
+        }
+        return success;
+    }
 
 }

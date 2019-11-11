@@ -41,6 +41,7 @@ public final class BlockUtil {
         if (id.length() == 1 && id.charAt(0) == '*') {
             return FuzzyBlockState.builder().type(BlockTypes.AIR).build();
         }
+        id = id.toLowerCase();
         BlockType type = BlockType.REGISTRY.get(id);
         if (type != null) {
             return type.getDefaultState();
@@ -61,7 +62,6 @@ public final class BlockUtil {
             BaseBlock block = PARSER.parseFromInput(id, PARSER_CONTEXT);
             return block.toImmutableState();
         } catch (InputParseException e) {
-            e.printStackTrace();
             return null;
         }
     }
