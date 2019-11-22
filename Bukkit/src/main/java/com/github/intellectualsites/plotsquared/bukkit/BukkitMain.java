@@ -7,6 +7,7 @@ import com.github.intellectualsites.plotsquared.bukkit.listeners.PlayerEvents;
 import com.github.intellectualsites.plotsquared.bukkit.listeners.PlotPlusListener;
 import com.github.intellectualsites.plotsquared.bukkit.listeners.SingleWorldListener;
 import com.github.intellectualsites.plotsquared.bukkit.listeners.WorldEvents;
+import com.github.intellectualsites.plotsquared.bukkit.listeners.ReloadCommandBlock;
 import com.github.intellectualsites.plotsquared.bukkit.util.BukkitChatManager;
 import com.github.intellectualsites.plotsquared.bukkit.util.BukkitChunkManager;
 import com.github.intellectualsites.plotsquared.bukkit.util.BukkitCommand;
@@ -605,6 +606,10 @@ public final class BukkitMain extends JavaPlugin implements Listener, IPlotMain 
     @Override public void registerPlotPlusEvents() {
         PlotPlusListener.startRunnable(this);
         getServer().getPluginManager().registerEvents(new PlotPlusListener(), this);
+    }
+
+    @Override public void registerBukkitEvents() {
+        getServer().getPluginManager().registerEvents(new ReloadCommandBlock(), this);
     }
 
     @Override public void registerForceFieldEvents() {

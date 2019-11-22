@@ -135,6 +135,11 @@ public interface IPlotMain extends ILogger {
     void registerPlotPlusEvents();
 
     /**
+     * Register bukkit events
+     */
+    void registerBukkitEvents();
+
+    /**
      * Register force field events.
      */
     void registerForceFieldEvents();
